@@ -1,12 +1,11 @@
 FROM node:20-alpine AS builder
 
 WORKDIR /app
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json package-lock.json ./
 COPY apps/backend/package.json ./apps/backend/
 COPY apps/web/package.json ./apps/web/
 
-RUN npm install -g pnpm
-RUN pnpm install --frozen-lockfile
+RUN npm ci
 
 COPY apps/web ./apps/web/
 WORKDIR /app/apps/web
@@ -14,7 +13,7 @@ WORKDIR /app/apps/web
 ENV NEXT_TELEMETRY_DISABLED 1
 
 # Note: standalone mode must be enabled in next.config.mjs
-RUN pnpm build
+RUN npm run build
 
 FROM node:20-alpine AS runner
 

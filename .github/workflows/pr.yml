@@ -43,55 +43,35 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Install pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
-          run_install: false
-
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          cache: 'npm'
 
       - name: Install Dependencies
-        run: pnpm install --frozen-lockfile
+        run: npm ci
 
       - name: TypeScript Type Check
         run: |
-          cd apps/backend && pnpm tsc --noEmit
-          cd ../web && pnpm tsc --noEmit
+          npm run type-check -w apps/backend
+          npm run type-check -w apps/web
 
       - name: ESLint & Prettier
-        run: pnpm lint
+        run: npm run lint
 
       - name: Run Prisma Generate
-        run: cd apps/backend && pnpm prisma generate
+        run: npm run prisma:generate -w apps/backend
 
       - name: Apply Test DB Migrations
         env:
           DATABASE_URL: "postgresql://root:rootpassword@localhost:5432/nexus_test_db"
-        run: cd apps/backend && pnpm prisma migrate dev --name init_test
+        run: npm run prisma:migrate -w apps/backend -- --name init_test
 
       - name: Unit & Integration Tests (Vitest)
         env:
           DATABASE_URL: "postgresql://root:rootpassword@localhost:5432/nexus_test_db"
           REDIS_URL: "redis://localhost:6379"
-        run: cd apps/backend && pnpm vitest run --coverage
+        run: npm run test -w apps/backend -- --coverage
 
-      - name: Build Next.js & Check Bundle Size
-        run: |
-          cd apps/web && pnpm build
+      - name: Build Next.js
+        run: npm run build -w apps/web
 
       - name: SAST Scan (Semgrep)
         uses: returntocorp/semgrep-action@v1

@@ -1,18 +1,17 @@
 FROM node:20-alpine AS builder
 
 WORKDIR /app
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json package-lock.json ./
 COPY apps/backend/package.json ./apps/backend/
 COPY apps/web/package.json ./apps/web/
 
-RUN npm install -g pnpm
-RUN pnpm install --frozen-lockfile
+RUN npm ci
 
 COPY apps/backend ./apps/backend/
 
 WORKDIR /app/apps/backend
 RUN npx prisma generate
-RUN pnpm build
+RUN npm run build
 
 FROM node:20-alpine AS runner
 
