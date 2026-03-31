@@ -6,8 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
   Layers, Plus, Search, MoreHorizontal,
-  Users, Clock, GitBranch, CheckCircle2,
-  Loader2, AlertCircle, ExternalLink, LayoutGrid, List
+  CheckCircle2, AlertCircle, LayoutGrid, List
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,10 +14,26 @@ import { apiFetch } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 
-async function fetchProjects() {
+interface Project {
+  id: string;
+  name: string;
+  key: string;
+  description: string;
+  status: string;
+  health: "ON_TRACK" | "AT_RISK" | "BLOCKED";
+  progress: number;
+  startDate: string;
+  dueDate: string;
+  members: string[];
+  openTickets: number;
+  closedTickets: number;
+  color: string;
+}
+
+async function fetchProjects(): Promise<Project[]> {
   try {
-    const data = await apiFetch("/api/v1/projects");
-    if (data.data && data.data.length > 0) return data.data;
+    const data = await apiFetch<{ data: Project[] }>("/api/v1/projects");
+    if (data?.data && data.data.length > 0) return data.data;
   } catch {}
   return [
     {
@@ -141,13 +156,13 @@ export default function ProjectsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
-  const { data: projects = [], isLoading } = useQuery({
+  const { data: projects = [], isLoading } = useQuery<Project[]>({
     queryKey: ["projects-list"],
     queryFn: fetchProjects,
     staleTime: 30_000,
   });
 
-  const filtered = projects.filter((p: any) => {
+  const filtered = projects.filter((p: Project) => {
     const matchSearch =
       p.name.toLowerCase().includes(search.toLowerCase()) ||
       p.key.toLowerCase().includes(search.toLowerCase());
@@ -155,10 +170,10 @@ export default function ProjectsPage() {
     return matchSearch && matchStatus;
   });
 
-  const activeCount   = projects.filter((p: any) => p.status === "ACTIVE").length;
-  const atRiskCount   = projects.filter((p: any) => p.health === "AT_RISK" || p.health === "BLOCKED").length;
+  const activeCount   = projects.filter((p: Project) => p.status === "ACTIVE").length;
+  const atRiskCount   = projects.filter((p: Project) => p.health === "AT_RISK" || p.health === "BLOCKED").length;
   const avgProgress   = projects.length
-    ? Math.round(projects.reduce((s: number, p: any) => s + (p.progress || 0), 0) / projects.length)
+    ? Math.round(projects.reduce((s: number, p: Project) => s + (p.progress || 0), 0) / projects.length)
     : 0;
 
   return (
@@ -250,7 +265,7 @@ export default function ProjectsPage() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 sm:gap-4">
-          {filtered.map((project: any) => {
+          {filtered.map((project: Project) => {
             const c = colorMap[project.color] || colorMap.violet;
             const sc = statusConfig[project.status] || statusConfig.ACTIVE;
             const hc = healthConfig[project.health] || healthConfig.ON_TRACK;

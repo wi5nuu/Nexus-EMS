@@ -1,0 +1,72 @@
+﻿
+> web@0.1.0 build
+> next build
+
+  Γû▓ Next.js 14.2.35
+
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully
+   Linting and checking validity of types ...
+node.exe : Failed to 
+compile.
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" "C:
+\Users\Legion\AppData\Roam
+ing ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (F  
+  ailed to compile.:Str   
+ ing) [], RemoteExcept    
+ion
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+
+./app/dashboard/tickets/[i
+d]/page.tsx:18:12
+Type error: 'data' is of 
+type 'unknown'.
+
+[0m [90m 16 |[39m   
+[36mtry[39m {[0m
+[0m [90m 17 |[39m     
+[36mconst[39m data 
+[33m=[39m 
+[36mawait[39m apiFetch(
+[32m`/api/v1/tickets/${id}
+`[39m)[33m;[39m[0m
+[0m[31m[1m>[22m[39m[
+90m 18 |[39m     
+[36mreturn[39m data[33m
+.[39mdata[33m;[39m[0m
+[0m [90m    |[39m      
+      
+[31m[1m^[22m[39m[0m
+[0m [90m 19 |[39m   } 
+[36mcatch[39m {[0m
+[0m [90m 20 |[39m     
+[36mreturn[39m {[0m
+[0m [90m 21 |[39m      
+ id[33m,[39m[0m
+Next.js build worker 
+exited with code: 1 and 
+signal: null
+npm error Lifecycle 
+script `build` failed 
+with error:
+npm error code 1
+npm error path D:\Nexus 
+EMS\apps\web
+npm error workspace 
+web@0.1.0
+npm error location 
+D:\Nexus EMS\apps\web
+npm error command failed
+npm error command C:\Windo
+ws\system32\cmd.exe /d /s 
+/c next build

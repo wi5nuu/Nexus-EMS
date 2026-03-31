@@ -41,8 +41,12 @@ export default function LoginPage() {
       localStorage.setItem("nexus_user", JSON.stringify(data.user));
 
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message || "Login failed. Please try again.");
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || "Login failed. Please try again.");
+      } else {
+        setError("An unexpected error occurred.");
+      }
     } finally {
       setLoading(false);
     }

@@ -1,0 +1,76 @@
+﻿
+> web@0.1.0 build
+> next build
+
+  Γû▓ Next.js 14.2.35
+
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully
+   Linting and checking validity of types ...
+node.exe : Failed to 
+compile.
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" "C:
+\Users\Legion\AppData\Roam
+ing ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (F  
+  ailed to compile.:Str   
+ ing) [], RemoteExcept    
+ion
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+
+./components/tickets/Smart
+Triage.tsx:23:17
+Type error: Argument of 
+type 'unknown' is not 
+assignable to parameter 
+of type 'SetStateAction<Tr
+iageResult | null>'.
+
+[0m [90m 21 |[39m     
+mutationFn[33m:[39m () 
+[33m=>[39m apiFetch([32
+m`/api/v1/ai/triage/${tick
+etId}`[39m[33m,[39m { 
+method[33m:[39m 
+[32m"POST"[39m 
+})[33m,[39m[0m
+[0m [90m 22 |[39m     
+onSuccess[33m:[39m 
+(data) [33m=>[39m {[0m
+[0m[31m[1m>[22m[39m[
+90m 23 |[39m       setRes
+ult(data)[33m;[39m[0m
+[0m [90m    |[39m      
+           
+[31m[1m^[22m[39m[0m
+[0m [90m 24 |[39m     
+}[33m,[39m[0m
+[0m [90m 25 |[39m   
+})[33m;[39m[0m
+[0m [90m 26 |[39m[0m
+Next.js build worker 
+exited with code: 1 and 
+signal: null
+npm error Lifecycle 
+script `build` failed 
+with error:
+npm error code 1
+npm error path D:\Nexus 
+EMS\apps\web
+npm error workspace 
+web@0.1.0
+npm error location 
+D:\Nexus EMS\apps\web
+npm error command failed
+npm error command C:\Windo
+ws\system32\cmd.exe /d /s 
+/c next build

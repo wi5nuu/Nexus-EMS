@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { Bell, Check, X, AlertTriangle, MessageSquare, CheckCircle, Rocket, Eye } from "lucide-react";
+import { Bell, Check, X, AlertTriangle, MessageSquare, CheckCircle, Rocket } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { getSocket } from "@/lib/socket";
 import { Button } from "@/components/ui/button";

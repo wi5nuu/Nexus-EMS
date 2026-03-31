@@ -12,7 +12,7 @@ interface KanbanColumnProps {
 }
 
 export function KanbanColumn({ column, tasks }: KanbanColumnProps) {
-  const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
+  const { setNodeRef, attributes, listeners, transform, transition } = useSortable({
     id: column.id,
     data: { type: "Column", column },
   });

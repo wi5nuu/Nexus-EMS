@@ -1,13 +1,14 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { 
-  CreditCard, Download, ExternalLink, ShieldCheck, 
-  Wallet, DollarSign, PieChart, TrendingUp 
+  Download,
+  TrendingUp,
+  PieChart,
+  CreditCard,
+  ShieldCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { apiFetch } from "@/lib/auth";
+import { Card } from "@/components/ui/card";
 
 import { cn } from "@/lib/utils";
 

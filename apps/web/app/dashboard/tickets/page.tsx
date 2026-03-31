@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
-import { Ticket, Search, Plus, Loader2, AlertTriangle, ChevronRight } from "lucide-react";
+import { Ticket, Search, Plus, AlertTriangle, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/lib/auth";
@@ -25,9 +25,18 @@ const STATUS_STYLE: Record<string, string> = {
   CLOSED: "text-gray-500",
 };
 
+interface TicketData {
+  id: string;
+  title: string;
+  status: string;
+  priority: string;
+  reporter: { email: string };
+  createdAt: string;
+}
+
 async function fetchTickets() {
   try {
-    const data = await apiFetch("/api/v1/tickets");
+    const data = await apiFetch<{ data: TicketData[] }>("/api/v1/tickets");
     if (data.data && data.data.length > 0) return data.data;
   } catch {}
   // Demo fallback
@@ -44,14 +53,14 @@ export default function TicketsPage() {
   const [search, setSearch] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("ALL");
 
-  const { data: tickets = [], isLoading } = useQuery({
+  const { data: tickets = [], isLoading } = useQuery<TicketData[]>({
     queryKey: ["tickets-list"],
     queryFn: fetchTickets,
     staleTime: 15_000,
     refetchInterval: 30_000,
   });
 
-  const filtered = tickets.filter((t: any) => {
+  const filtered = tickets.filter((t: TicketData) => {
     const matchSearch = t.title?.toLowerCase().includes(search.toLowerCase());
     const matchPriority = priorityFilter === "ALL" || t.priority === priorityFilter;
     return matchSearch && matchPriority;
@@ -71,7 +80,7 @@ export default function TicketsPage() {
           <p className="text-text-secondary mt-0.5 font-dmsans text-[11px] sm:text-[13px] flex items-center gap-1.5">
             {tickets.length} total tickets <span className="h-1 w-1 rounded-full bg-border-strong hidden sm:block" />
             <span className="text-crimson-500 font-medium">
-              {tickets.filter((t: any) => t.priority === "CRITICAL" && t.status !== "CLOSED").length} critical
+              {tickets.filter((t: TicketData) => t.priority === "CRITICAL" && t.status !== "CLOSED").length} critical
             </span>
           </p>
         </div>
@@ -138,7 +147,7 @@ export default function TicketsPage() {
           </div>
         ) : (
           <div className="divide-y divide-border-subtle">
-            {filtered.map((ticket: any) => (
+            {filtered.map((ticket: TicketData) => (
               <div
                 key={ticket.id}
                 onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}

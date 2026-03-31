@@ -4,25 +4,14 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { 
   ArrowLeft, 
-  Ticket, 
   Send, 
   AlertTriangle, 
-  ShieldCheck,
-  PlusCircle,
-  Users
+  ShieldCheck
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select-custom"; // Assuming there's a select component or similar
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 
 export default function NewTicketPage() {
   const router = useRouter();

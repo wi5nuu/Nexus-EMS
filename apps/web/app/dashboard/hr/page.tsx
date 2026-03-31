@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Users, Briefcase, Calendar, TrendingUp, Plus, Search, Filter, MoreHorizontal, ArrowUpRight } from "lucide-react";
+import { Users, Plus, Search, Filter, ArrowUpRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,10 +11,22 @@ import { cn } from "@/lib/utils";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { motion } from "framer-motion";
 
-async function fetchEmployees() {
+interface Employee {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
+  department: string | { name: string };
+  jobTitle: string;
+  level: string;
+  joined: string;
+  user?: { email: string };
+}
+
+async function fetchEmployees(): Promise<Employee[]> {
   try {
-    const data = await apiFetch("/api/v1/employees");
-    return data.data ?? [];
+    const data = await apiFetch<{ data: Employee[] }>("/api/v1/employees");
+    return data?.data ?? [];
   } catch {
     return [
       { id: "1", name: "Arif Kurniawan",    email: "arif@nexus.co",    jobTitle: "Principal Engineer",  department: "Engineering",     status: "Active",   level: "Senior",   joined: "2023-03-15" },
@@ -51,17 +63,18 @@ export default function HRPage() {
     staleTime: 30_000,
   });
 
-  const filtered = employees.filter((e: any) => {
+  const filtered = employees.filter((e: Employee) => {
     const term = search.toLowerCase();
+    const deptName = typeof e.department === 'string' ? e.department : (e.department?.name || "");
     return (
       (e.name || e.user?.email || "").toLowerCase().includes(term) ||
       (e.jobTitle || "").toLowerCase().includes(term) ||
-      (e.department || e.department?.name || "").toLowerCase().includes(term)
+      deptName.toLowerCase().includes(term)
     );
   });
 
-  const activeCount = employees.filter((e: any) => e.status === "Active").length;
-  const onLeaveCount = employees.filter((e: any) => e.status === "On Leave").length;
+  const activeCount = employees.filter((e: Employee) => e.status === "Active").length;
+  const onLeaveCount = employees.filter((e: Employee) => e.status === "On Leave").length;
 
   return (
     <motion.div 
@@ -76,7 +89,7 @@ export default function HRPage() {
         <div>
           <h1 className="font-syne font-bold text-lg sm:text-xl text-text-primary tracking-tight">HR & People</h1>
           <p className="text-text-secondary mt-0.5 font-dmsans text-[11px] sm:text-xs">
-            {isLoading ? "Loading..." : `${employees.length} employees across ${new Set(employees.map((e: any) => e.department || e.department?.name)).size} departments`}
+            {isLoading ? "Loading..." : `${employees.length} employees across ${new Set(employees.map((e: Employee) => typeof e.department === 'string' ? e.department : e.department?.name)).size} departments`}
           </p>
         </div>
         <div className="flex gap-1.5 w-full sm:w-auto">
@@ -156,10 +169,11 @@ export default function HRPage() {
               </p>
             </div>
           ) : (
-            filtered.map((emp: any) => {
+            filtered.map((emp: Employee) => {
               const initials = emp.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2);
               const st = statusConfig[emp.status] || statusConfig["Inactive"];
-              const dept = deptColors[emp.department || emp.department?.name] || "bg-bg-elevated text-text-secondary";
+              const deptName = typeof emp.department === 'string' ? emp.department : (emp.department?.name || "Other");
+              const dept = deptColors[deptName] || "bg-bg-elevated text-text-secondary";
 
               return (
                 <div 
@@ -182,7 +196,7 @@ export default function HRPage() {
                     
                     <div className="col-span-2">
                       <span className={cn("inline-flex px-1.5 py-0.5 rounded text-[9px] font-medium border border-transparent whitespace-nowrap", dept)}>
-                        {emp.department || emp.department?.name}
+                        {typeof emp.department === 'string' ? emp.department : emp.department?.name}
                       </span>
                     </div>
 
@@ -233,7 +247,7 @@ export default function HRPage() {
                       </div>
                       <div className="min-w-0">
                         <span className="text-text-tertiary block mb-0.5 text-[10px]">Department</span>
-                        <p className="font-medium text-text-secondary truncate">{emp.department || emp.department?.name}</p>
+                        <p className="font-medium text-text-secondary truncate">{typeof emp.department === 'string' ? emp.department : emp.department?.name}</p>
                       </div>
                     </div>
                   </div>

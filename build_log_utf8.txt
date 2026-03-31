@@ -1,0 +1,187 @@
+﻿
+> web@0.1.0 build
+> next build
+
+  Γû▓ Next.js 14.2.35
+
+   Creating an optimized production build ...
+ Γ£ô Compiled successfully
+   Linting and checking validity of types ...
+node.exe : Failed to 
+compile.
+At line:1 char:1
++ & "C:\Program 
+Files\nodejs/node.exe" "C:
+\Users\Legion\AppData\Roam
+ing ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo        
+      : NotSpecified: (F  
+  ailed to compile.:Str   
+ ing) [], RemoteExcept    
+ion
+    + FullyQualifiedError 
+   Id : NativeCommandErr  
+  or
+ 
+
+./app/dashboard/projects/[
+id]/page.tsx:121:5
+Type error: No overload 
+matches this call.
+  Overload 1 of 3, 
+'(options: DefinedInitialD
+ataOptions<ProjectDetail, 
+Error, ProjectDetail, 
+readonly unknown[]>, 
+queryClient?: QueryClient 
+| undefined): DefinedUseQu
+eryResult<...>', gave the 
+following error.
+    Type '() => 
+Promise<ProjectDetail | 
+null>' is not assignable 
+to type 'QueryFunction<Pro
+jectDetail, readonly 
+unknown[]>'.
+      Type 
+'Promise<ProjectDetail | 
+null>' is not assignable 
+to type 'ProjectDetail | 
+Promise<ProjectDetail>'.
+        Type 
+'Promise<ProjectDetail | 
+null>' is not assignable 
+to type 
+'Promise<ProjectDetail>'.
+          Type 
+'ProjectDetail | null' is 
+not assignable to type 
+'ProjectDetail'.
+            Type 'null' 
+is not assignable to type 
+'ProjectDetail'.
+  Overload 2 of 3, 
+'(options: UndefinedInitia
+lDataOptions<ProjectDetail
+, Error, ProjectDetail, 
+readonly unknown[]>, 
+queryClient?: QueryClient 
+| undefined): 
+UseQueryResult<...>', 
+gave the following error.
+    Type '() => 
+Promise<ProjectDetail | 
+null>' is not assignable 
+to type 'unique symbol | Q
+ueryFunction<ProjectDetail
+, readonly unknown[], 
+never> | undefined'.
+      Type '() => 
+Promise<ProjectDetail | 
+null>' is not assignable 
+to type 'QueryFunction<Pro
+jectDetail, readonly 
+unknown[], never>'.
+        Type 
+'Promise<ProjectDetail | 
+null>' is not assignable 
+to type 'ProjectDetail | 
+Promise<ProjectDetail>'.
+          Type 
+'Promise<ProjectDetail | 
+null>' is not assignable 
+to type 
+'Promise<ProjectDetail>'.
+            Type 
+'ProjectDetail | null' is 
+not assignable to type 
+'ProjectDetail'.
+              Type 'null' 
+is not assignable to type 
+'ProjectDetail'.
+  Overload 3 of 3, 
+'(options: UseQueryOptions
+<ProjectDetail, Error, 
+ProjectDetail, readonly 
+unknown[]>, queryClient?: 
+QueryClient | undefined): 
+UseQueryResult<...>', 
+gave the following error.
+    Type '() => 
+Promise<ProjectDetail | 
+null>' is not assignable 
+to type 'unique symbol | Q
+ueryFunction<ProjectDetail
+, readonly unknown[], 
+never> | undefined'.
+      Type '() => 
+Promise<ProjectDetail | 
+null>' is not assignable 
+to type 'QueryFunction<Pro
+jectDetail, readonly 
+unknown[], never>'.
+        Type 
+'Promise<ProjectDetail | 
+null>' is not assignable 
+to type 'ProjectDetail | 
+Promise<ProjectDetail>'.
+          Type 
+'Promise<ProjectDetail | 
+null>' is not assignable 
+to type 
+'Promise<ProjectDetail>'.
+            Type 
+'ProjectDetail | null' is 
+not assignable to type 
+'ProjectDetail'.
+              Type 'null' 
+is not assignable to type 
+'ProjectDetail'.
+
+[0m [90m 119 |[39m   
+[36mconst[39m { 
+data[33m:[39m 
+project[33m,[39m 
+isLoading } [33m=[39m us
+eQuery[33m<[39m[33mProj
+ectDetail[39m[33m>[39m(
+{[0m
+[0m [90m 120 |[39m     
+queryKey[33m:[39m [[32m
+"project"[39m[33m,[39m 
+params[33m.[39mid][33m,
+[39m[0m
+[0m[31m[1m>[22m[39m[
+90m 121 |[39m     
+queryFn[33m:[39m () 
+[33m=>[39m fetchProject(
+params[33m.[39mid)[33m,
+[39m[0m
+[0m [90m     |[39m     
+[31m[1m^[22m[39m[0m
+[0m [90m 122 |[39m     
+staleTime[33m:[39m [35m
+30[39m_000[33m,[39m[0m
+[0m [90m 123 |[39m   
+})[33m;[39m[0m
+[0m [90m 124 |[39m[0m
+Next.js build worker 
+exited with code: 1 and 
+signal: null
+npm error Lifecycle 
+script `build` failed 
+with error:
+npm error code 1
+npm error path D:\Nexus 
+EMS\apps\web
+npm error workspace 
+web@0.1.0
+npm error location 
+D:\Nexus EMS\apps\web
+npm error command failed
+npm error command C:\Windo
+ws\system32\cmd.exe /d /s 
+/c next build

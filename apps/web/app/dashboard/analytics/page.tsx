@@ -3,15 +3,17 @@
 import { useQuery } from "@tanstack/react-query";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  AreaChart, Area, Cell, PieChart, Pie 
+  AreaChart, Area 
 } from "recharts";
 import { 
-  TrendingUp, Users, Ticket, Layers, 
-  AlertCircle, CheckCircle2, Clock, ArrowUpRight 
+  AlertCircle, CheckCircle2 
 } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { apiFetch } from "@/lib/auth";
+import { useState, useEffect } from "react";
+import { useLanguage } from "@/hooks/useLanguage";
+import { cn } from "@/lib/utils";
 
 const velocityData = [
   { name: "Sprint 1", points: 42 },
@@ -32,9 +34,17 @@ const slaData = [
   { name: "Sun", compliance: 97 },
 ];
 
-async function fetchKpis() {
+interface KpiData {
+  totalUsers: number;
+  openTickets: number;
+  totalProjects: number;
+  activeSprints: number;
+  timestamp: string;
+}
+
+async function fetchKpis(): Promise<KpiData> {
   try {
-    return await apiFetch("/api/v1/analytics/kpis");
+    return await apiFetch<KpiData>("/api/v1/analytics/kpis");
   } catch {
     return {
       totalUsers: 1248,
@@ -45,10 +55,6 @@ async function fetchKpis() {
     };
   }
 }
-
-import { useState, useEffect } from "react";
-import { useLanguage } from "@/hooks/useLanguage";
-import { cn } from "@/lib/utils";
 
 const translations = {
   en: {
@@ -111,7 +117,7 @@ const translations = {
 export default function AnalyticsPage() {
   const { lang } = useLanguage();
   const [mounted, setMounted] = useState(false);
-  const { data: kpis, isLoading } = useQuery({
+  const { data: kpis, isLoading } = useQuery<KpiData>({
     queryKey: ["analytics-kpis"],
     queryFn: fetchKpis,
     refetchInterval: 60000,
@@ -130,14 +136,13 @@ export default function AnalyticsPage() {
       </div>
 
       <div className="flex overflow-x-auto snap-x snap-mandatory lg:grid lg:grid-cols-4 gap-2.5 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 no-scrollbar">
-          <MetricCard className="min-w-[140px] w-[42vw] sm:w-auto shrink-0 snap-center" label={t.metrics.scale} value={isLoading ? "—" : kpis?.totalUsers} trend={2.4} trendDirection="higher-is-better" status="success" progress={100} href="/dashboard/hr" />
-          <MetricCard className="min-w-[140px] w-[42vw] sm:w-auto shrink-0 snap-center" label={t.metrics.open} value={isLoading ? "—" : kpis?.openTickets} trend={-12} trendDirection="lower-is-better" status="warning" progress={42} href="/dashboard/tickets" />
+          <MetricCard className="min-w-[140px] w-[42vw] sm:w-auto shrink-0 snap-center" label={t.metrics.scale} value={isLoading ? "—" : (kpis?.totalUsers ?? 0)} trend={2.4} trendDirection="higher-is-better" status="success" progress={100} href="/dashboard/hr" />
+          <MetricCard className="min-w-[140px] w-[42vw] sm:w-auto shrink-0 snap-center" label={t.metrics.open} value={isLoading ? "—" : (kpis?.openTickets ?? 0)} trend={-12} trendDirection="lower-is-better" status="warning" progress={42} href="/dashboard/tickets" />
           <MetricCard className="min-w-[140px] w-[42vw] sm:w-auto shrink-0 snap-center" label={t.metrics.sla} value="94.2" unit="%" trend={1.2} trendDirection="higher-is-better" status="normal" progress={94} />
           <MetricCard className="min-w-[140px] w-[42vw] sm:w-auto shrink-0 snap-center" label={t.metrics.velo} value="68.4" trend={8.1} trendDirection="higher-is-better" status="success" progress={85} />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-        {/* Sprint Velocity Chart */}
         <Card className="bg-bg-surface border border-border-subtle rounded-xl shadow-sm overflow-hidden flex flex-col">
           <CardHeader className="p-3 sm:p-4 border-b border-border-subtle">
             <CardTitle className="font-syne font-bold text-sm sm:text-base text-text-primary">{t.velocityTitle}</CardTitle>
@@ -164,7 +169,6 @@ export default function AnalyticsPage() {
           </CardContent>
         </Card>
 
-        {/* SLA Compliance Trend */}
         <Card className="bg-bg-surface border border-border-subtle rounded-xl shadow-sm overflow-hidden flex flex-col">
           <CardHeader className="p-3 sm:p-4 border-b border-border-subtle">
             <CardTitle className="font-syne font-bold text-sm sm:text-base text-text-primary">{t.slaTitle}</CardTitle>

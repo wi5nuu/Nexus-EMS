@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { 
   DndContext, 
   DragOverlay, 
@@ -11,8 +11,7 @@ import {
   useSensor, 
   useSensors,
   DragStartEvent,
-  DragOverEvent,
-  DragEndEvent
+  DragOverEvent
 } from "@dnd-kit/core";
 import { 
   SortableContext, 
@@ -74,9 +73,8 @@ const initialTasks: Task[] = [
 ];
 
 export function KanbanBoard() {
-  const queryClient = useQueryClient();
 
-  const { data: fetchedTasks, isLoading, isError } = useQuery({
+  const { data: fetchedTasks, isLoading } = useQuery({
     queryKey: ['tickets'],
     queryFn: async () => {
       try {
@@ -86,7 +84,7 @@ export function KanbanBoard() {
         if (!json.data || json.data.length === 0) return initialTasks;
         
         // Map backend Domain 4 Ticket schema to Kanban Task schema
-        return json.data.map((t: any) => ({
+        return json.data.map((t: { id: string; status: string; title: string; description?: string; priority: "Low" | "Medium" | "High" | "Urgent"; assignee?: { email: string } }) => ({
           id: t.id,
           columnId: t.status,
           title: t.title,
@@ -94,7 +92,7 @@ export function KanbanBoard() {
           priority: t.priority,
           assignee: t.assignee?.email?.substring(0,2).toUpperCase() || 'NA'
         }));
-      } catch (err) {
+      } catch {
         console.warn("Backend unavailable, falling back to mock data");
         return initialTasks;
       }
@@ -102,7 +100,7 @@ export function KanbanBoard() {
     staleTime: 5000,
   });
 
-  const [columns, setColumns] = useState<Column[]>(initialColumns);
+  const [columns] = useState<Column[]>(initialColumns);
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
@@ -165,7 +163,7 @@ export function KanbanBoard() {
     }
   }
 
-  function handleDragEnd(event: DragEndEvent) {
+  function handleDragEnd() {
     setActiveTask(null);
   }
 

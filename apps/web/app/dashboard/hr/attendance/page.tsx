@@ -4,15 +4,23 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Clock, MapPin, Monitor, CheckCircle2, 
-  ArrowRight, History, Calendar, Loader2, Play, Square 
+  ArrowRight, Loader2, Play, Square 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { apiFetch } from "@/lib/auth";
 
-async function fetchAttendanceHistory() {
+interface AttendanceLog {
+  id: string;
+  clockIn: string;
+  clockOut?: string;
+  location: string;
+  device: string;
+}
+
+async function fetchAttendanceHistory(): Promise<AttendanceLog[]> {
   try {
-    return await apiFetch("/api/v1/hr/attendance/my-history");
+    return await apiFetch<AttendanceLog[]>("/api/v1/hr/attendance/my-history");
   } catch {
     return [
       { id: "1", clockIn: "2026-03-29T08:00:00Z", clockOut: "2026-03-29T17:00:00Z", location: "Remote", device: "MacBook Pro" },
@@ -32,7 +40,7 @@ export default function AttendancePage() {
     return () => clearInterval(timer);
   }, []);
 
-  const { data: history, isLoading } = useQuery({
+  const { data: history, isLoading } = useQuery<AttendanceLog[]>({
     queryKey: ["attendance-history"],
     queryFn: fetchAttendanceHistory,
   });
@@ -135,7 +143,7 @@ export default function AttendancePage() {
                   <div key={i} className="h-16 bg-white/5 rounded-xl animate-pulse" />
                 ))
               ) : (
-                history?.map((log: any) => {
+                history?.map((log: AttendanceLog) => {
                   const duration = log.clockOut 
                     ? Math.round((new Date(log.clockOut).getTime() - new Date(log.clockIn).getTime()) / 3600000)
                     : "--";

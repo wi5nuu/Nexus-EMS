@@ -5,12 +5,12 @@ import {
   Palette, Sun, Moon, Laptop, 
   Globe, Languages, Bell, 
   Save, ShieldCheck, Zap,
-  CheckCircle2, AlertTriangle
+  CheckCircle2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -259,7 +259,7 @@ const translations = {
 };
 
 export default function PreferencesPage() {
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { theme, setTheme } = useTheme();
   const { lang, setLang } = useLanguage();
   const [mounted, setMounted] = useState(false);
   

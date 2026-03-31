@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   Clock, AlertTriangle, MessageSquare, Tag, Loader2, Send, 
-  ArrowLeft, Link2, Eye, ChevronDown, File, Paperclip, ExternalLink
+  ArrowLeft, Link2, ChevronDown, ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/auth";
@@ -12,28 +12,49 @@ import { SmartTriage } from "@/components/tickets/SmartTriage";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
-async function fetchTicket(id: string) {
+interface TicketComment {
+  id: string;
+  body: string;
+  user: { email: string };
+  createdAt: string;
+}
+
+interface TicketDetail {
+  id: string;
+  project: { name: string; key: string };
+  ticketProjectId: string;
+  title: string;
+  status: string;
+  priority: string;
+  reporter: { name: string; email: string };
+  assignee: { name: string; email: string };
+  description: string;
+  comments: TicketComment[];
+  createdAt: string;
+}
+
+async function fetchTicket(id: string): Promise<TicketDetail> {
   try {
-    const data = await apiFetch(`/api/v1/tickets/${id}`);
-    return data.data;
-  } catch {
-    return {
-      id,
-      project: { name: "Nexus Platform", key: "NEX" },
-      ticketProjectId: "demo-proj",
-      title: "Database connection spiking to 100% CPU",
-      status: "IN_PROGRESS",
-      priority: "CRITICAL",
-      reporter: { name: "Rania Santoso", email: "rania@nexus.co" },
-      assignee: { name: "Arif Kurniawan", email: "arif@nexus.co" },
-      description: "The primary Postgres database is experiencing severe CPU spikes under peak load. Every 15-20 minutes, CPU jumps to 100% causing severe latency degradation.\n\n**Affected users:** 40,000+\n**Environment:** Production (us-east-1)\n**Started:** ~2 hours ago",
-      comments: [
-        { id: "c1", body: "I can reproduce this with pgbench at 50 concurrent connections. The issue seems to be in the query planner not using the right index.", user: { email: "arif@nexus.co" }, createdAt: new Date(Date.now() - 3600_000).toISOString() },
-        { id: "c2", body: "Cross-referencing with the deployment log — this started 15min after the v2.4.0 deploy. Rolling back to v2.3.9 as a mitigation.", user: { email: "rania@nexus.co" }, createdAt: new Date(Date.now() - 1800_000).toISOString() },
-      ],
-      createdAt: new Date(Date.now() - 7200_000).toISOString(),
-    };
-  }
+    const data = await apiFetch<{ data: TicketDetail }>(`/api/v1/tickets/${id}`);
+    if (data && data.data) return data.data;
+  } catch {}
+  
+  return {
+    id,
+    project: { name: "Nexus Platform", key: "NEX" },
+    ticketProjectId: "demo-proj",
+    title: "Database connection spiking to 100% CPU",
+    status: "IN_PROGRESS",
+    priority: "CRITICAL",
+    reporter: { name: "Rania Santoso", email: "rania@nexus.co" },
+    assignee: { name: "Arif Kurniawan", email: "arif@nexus.co" },
+    description: "The primary Postgres database is experiencing severe CPU spikes under peak load. Every 15-20 minutes, CPU jumps to 100% causing severe latency degradation.\n\n**Affected users:** 40,000+\n**Environment:** Production (us-east-1)\n**Started:** ~2 hours ago",
+    comments: [
+      { id: "c1", body: "I can reproduce this with pgbench at 50 concurrent connections. The issue seems to be in the query planner not using the right index.", user: { email: "arif@nexus.co" }, createdAt: new Date(Date.now() - 3600_000).toISOString() },
+      { id: "c2", body: "Cross-referencing with the deployment log — this started 15min after the v2.4.0 deploy. Rolling back to v2.3.9 as a mitigation.", user: { email: "rania@nexus.co" }, createdAt: new Date(Date.now() - 1800_000).toISOString() },
+    ],
+    createdAt: new Date(Date.now() - 7200_000).toISOString(),
+  };
 }
 
 async function postComment(ticketId: string, body: string) {
@@ -130,7 +151,7 @@ export default function TicketDetail({ params }: { params: { id: string } }) {
   const queryClient = useQueryClient();
   const [comment, setComment] = useState("");
 
-  const { data: ticket, isLoading } = useQuery({
+  const { data: ticket, isLoading } = useQuery<TicketDetail>({
     queryKey: ["ticket", params.id],
     queryFn: () => fetchTicket(params.id),
     refetchInterval: 30_000,
@@ -261,7 +282,7 @@ export default function TicketDetail({ params }: { params: { id: string } }) {
               </div>
             </div>
 
-            {(ticket.comments || []).map((c: any) => (
+            {(ticket.comments || []).map((c: { id: string; user?: { email: string }; body: string; createdAt: string }) => (
               <div key={c.id} className="flex gap-3">
                 <div className="h-7 w-7 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-[10px] font-bold text-violet-400 shrink-0">
                   {c.user?.email?.slice(0, 2).toUpperCase() || "??"}

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
-  ArrowLeft, Layers, Users, GitBranch, Clock,
+  ArrowLeft, Layers, Users, GitBranch,
   CheckCircle2, AlertCircle, MoreHorizontal,
   Settings, Target, Zap, CalendarDays, ExternalLink
 } from "lucide-react";
@@ -14,13 +14,13 @@ import { KanbanBoard } from "@/components/dashboard/KanbanBoard";
 import { apiFetch } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
-async function fetchProject(id: string) {
+async function fetchProject(id: string): Promise<ProjectDetail> {
   try {
-    const data = await apiFetch(`/api/v1/projects/${id}`);
-    if (data.data) return data.data;
+    const data = await apiFetch<{ data: ProjectDetail }>(`/api/v1/projects/${id}`);
+    if (data && data.data) return data.data;
   } catch {}
 
-  const demos: Record<string, any> = {
+  const demos: Record<string, ProjectDetail> = {
     "proj-1": {
       id: "proj-1", name: "Nexus Platform v3", key: "NEX", color: "violet",
       description: "Core platform rebuild with microservices architecture and real-time event streaming via Kafka. Targets 99.99% uptime SLA.",
@@ -79,11 +79,43 @@ const healthConfig: Record<string, { label: string; color: string }> = {
 const TABS = ["Overview", "Board", "Members", "Settings"] as const;
 type Tab = typeof TABS[number];
 
+interface Milestone {
+  done: boolean;
+  title: string;
+  date: string;
+}
+
+interface ProjectMember {
+  initials: string;
+  name: string;
+  role: string;
+  status: "online" | "away" | "offline";
+}
+
+interface ProjectDetail {
+  id: string;
+  name: string;
+  key: string;
+  color: string;
+  description: string;
+  status: string;
+  health: "ON_TRACK" | "AT_RISK" | "BLOCKED";
+  progress: number;
+  startDate: string;
+  dueDate: string;
+  members: ProjectMember[];
+  milestones: Milestone[];
+  openTickets: number;
+  closedTickets: number;
+  currentSprint: number;
+  totalSprints: number;
+}
+
 export default function ProjectDetailPage({ params }: { params: { id: string } }) {
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
   const router = useRouter();
 
-  const { data: project, isLoading } = useQuery({
+  const { data: project, isLoading } = useQuery<ProjectDetail>({
     queryKey: ["project", params.id],
     queryFn: () => fetchProject(params.id),
     staleTime: 30_000,
@@ -243,7 +275,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
               <div className="bg-bg-surface border border-border-subtle rounded-xl p-4 shadow-sm">
                 <h3 className="font-syne font-bold text-[13px] text-text-primary mb-3">Milestones</h3>
                 <div className="space-y-2.5">
-                  {project.milestones.map((ms: any, i: number) => (
+                  {project.milestones.map((ms: Milestone, i: number) => (
                     <div key={i} className="flex items-center gap-3">
                       <div className={cn(
                         "h-7 w-7 rounded-full flex items-center justify-center shrink-0 border",
@@ -308,7 +340,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                 </Button>
               </div>
               <div className="space-y-2">
-                {project.members?.map((m: any, i: number) => (
+                {project.members?.map((m: ProjectMember, i: number) => (
                   <div key={i} className="flex items-center gap-2.5 group">
                     <div className="relative shrink-0">
                       <div className={cn(
@@ -387,7 +419,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
             </Button>
           </div>
           <div className="divide-y divide-border-subtle">
-            {project.members?.map((m: any, i: number) => (
+            {project.members?.map((m: ProjectMember, i: number) => (
               <div key={i} className="flex items-center gap-4 px-5 py-3.5 hover:bg-bg-elevated transition-fast group">
                 <div className="relative shrink-0">
                   <div className={cn("h-9 w-9 rounded-full flex items-center justify-center text-[12px] font-bold border", c.bg, c.text, c.border)}>

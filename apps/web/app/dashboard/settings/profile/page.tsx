@@ -1,24 +1,36 @@
 "use client";
 
 import { 
-  User, Mail, Phone, MapPin, 
-  Shield, Key, Bell, Save, Check,
+  Mail, 
+  Shield, Key, Save,
   Github, Slack, Cloud
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiFetch, getUser, updateUser } from "@/lib/auth";
-import { cn } from "@/lib/utils";
-import { motion, AnimatePresence } from "framer-motion";
+import { apiFetch, updateUser } from "@/lib/auth";
+import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
+
+interface ProfileData {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  employeeProfile?: {
+    phoneNumber?: string;
+    officeLocation?: string;
+    department?: string;
+    position?: string;
+    bio?: string;
+  };
+}
 
 export default function ProfileSettingsPage() {
   const queryClient = useQueryClient();
-  const user = getUser();
   
   const [formData, setFormData] = useState({
     firstName: "",
@@ -27,9 +39,12 @@ export default function ProfileSettingsPage() {
     officeLocation: "",
   });
 
-  const { data: profile, isLoading } = useQuery({
+  const { data: profile, isLoading } = useQuery<ProfileData>({
     queryKey: ["me"],
-    queryFn: () => apiFetch("/api/v1/auth/me"),
+    queryFn: async () => {
+      const res = await apiFetch<ProfileData>("/api/v1/auth/me");
+      return res;
+    },
   });
 
   useEffect(() => {
@@ -44,27 +59,23 @@ export default function ProfileSettingsPage() {
   }, [profile]);
 
   const mutation = useMutation({
-    mutationFn: (data: any) => apiFetch("/api/v1/auth/me", {
+    mutationFn: (data: Partial<ProfileData>) => apiFetch<ProfileData>("/api/v1/auth/me", {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
     onSuccess: (newData) => {
       queryClient.setQueryData(["me"], newData);
-      updateUser({
-        firstName: newData.firstName,
-        lastName: newData.lastName,
-      });
+      if (newData) {
+        updateUser({
+          firstName: newData.firstName,
+          lastName: newData.lastName,
+        });
+      }
       alert("Profile updated successfully!");
     },
   });
 
-  const connectMutation = useMutation({
-    mutationFn: (data: any) => apiFetch("/api/v1/auth/me", {
-      method: "PATCH",
-      body: JSON.stringify(data),
-    }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["me"] }),
-  });
+
 
   const handleSave = () => {
     mutation.mutate(formData);
@@ -99,158 +110,135 @@ export default function ProfileSettingsPage() {
             <CardHeader className="pb-3 border-b border-border-subtle bg-bg-panel/30">
                <CardTitle className="text-[9px] sm:text-[10px] font-syne font-bold uppercase tracking-widest text-text-tertiary text-center">User Profile</CardTitle>
             </CardHeader>
-            <CardContent className="pt-6 pb-6 flex flex-col items-center">
-              <div className="relative group">
-                <Avatar className="h-20 w-20 border-2 border-brand-default/20 shadow-lg group-hover:opacity-80 transition-fast cursor-pointer">
+            <CardContent className="px-6 pb-6 pt-6 flex flex-col items-center">
+              <div className="relative group cursor-pointer">
+                <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-2 border-border-default shadow-xl group-hover:border-brand-default transition-fast">
                   <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.id}`} />
-                  <AvatarFallback>{profile?.firstName?.[0]}{profile?.lastName?.[0]}</AvatarFallback>
+                  <AvatarFallback className="bg-bg-sunken text-lg sm:text-xl font-bold">{profile?.firstName?.[0]}{profile?.lastName?.[0]}</AvatarFallback>
                 </Avatar>
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-fast pointer-events-none">
-                  <div className="bg-bg-panel/80 p-1.5 rounded-full border border-border-default shadow-xl">
-                    <User className="h-4 w-4 text-brand-text" />
-                  </div>
+                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-fast">
+                   <Cloud className="h-5 w-5 text-white" />
                 </div>
               </div>
-              <h3 className="mt-3 font-syne font-bold text-[15px] sm:text-lg text-text-primary tracking-tight text-center">{profile?.firstName} {profile?.lastName}</h3>
-              <p className="text-[10px] sm:text-xs text-text-tertiary font-mono text-center truncate w-full">{profile?.email}</p>
-              <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-emerald-500 uppercase tracking-widest">
-                <Shield className="h-2.5 w-2.5" /> Administrator
+              <h2 className="mt-4 font-syne font-bold text-md sm:text-lg text-text-primary">{profile?.firstName} {profile?.lastName}</h2>
+              <p className="text-[10px] font-mono font-bold text-brand-text uppercase tracking-widest mt-1 bg-brand-default/10 px-2 py-0.5 rounded-full">{profile?.employeeProfile?.position || "Member"}</p>
+              <div className="mt-6 w-full space-y-3">
+                <div className="flex items-center gap-3 text-[11px] sm:text-[12px] text-text-secondary group">
+                  <Mail className="h-3.5 w-3.5 text-text-tertiary group-hover:text-brand-text transition-fast" />
+                  <span>{profile?.email}</span>
+                </div>
+                <div className="flex items-center gap-3 text-[11px] sm:text-[12px] text-text-secondary group">
+                  <Shield className="h-3.5 w-3.5 text-text-tertiary group-hover:text-brand-text transition-fast" />
+                  <span>{profile?.employeeProfile?.department || "General"}</span>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-         <div className="space-y-1.5">
-             {[
-               { icon: Bell, label: "Notification Preferences", href: "#" },
-               { icon: Key, label: "Security & Passwords", href: "#" },
-               { icon: MapPin, label: "Address & Location", href: "#" },
-             ].map((link, i) => (
-               <Button 
-                key={i} 
-                variant="ghost" 
-                className="w-full justify-between text-[11px] sm:text-[13px] font-medium text-text-secondary hover:text-text-primary hover:bg-bg-elevated transition-fast h-9 px-3 group"
-               >
-                 <div className="flex items-center">
-                    <link.icon className="h-3.5 w-3.5 mr-2.5 text-text-tertiary group-hover:text-brand-text transition-colors" />
-                    {link.label}
-                 </div>
-                 <div className="h-1 w-1 rounded-full bg-border-strong opacity-0 group-hover:opacity-100 transition-all" />
-               </Button>
-             ))}
+          <div className="space-y-4">
+             <h3 className="text-[10px] font-bold text-text-tertiary uppercase tracking-[0.2em] px-1">Security Score</h3>
+             <div className="bg-bg-panel border border-border-default rounded-xl p-4">
+                <div className="flex items-center justify-between mb-2">
+                   <div className="flex items-center gap-2">
+                      <Key className="h-3.5 w-3.5 text-amber-500" />
+                      <span className="text-[11px] font-bold text-text-primary">2FA Status</span>
+                   </div>
+                   <span className="text-[10px] font-bold text-emerald-500 uppercase">ACTIVE</span>
+                </div>
+                <div className="h-1.5 w-full bg-border-subtle rounded-full overflow-hidden">
+                   <div className="h-full w-4/5 bg-emerald-500" />
+                </div>
+             </div>
           </div>
         </div>
 
         <div className="lg:col-span-8 space-y-4 lg:space-y-6">
-          <Card className="bg-bg-surface border-border-default shadow-sm overflow-hidden">
-             <CardHeader className="border-b border-border-subtle bg-bg-panel/30 py-3">
-               <CardTitle className="text-[9px] sm:text-[10px] font-syne font-bold uppercase tracking-widest text-text-tertiary">Personal Information</CardTitle>
-             </CardHeader>
-             <CardContent className="pt-4 sm:pt-6 space-y-4 pb-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
-                   <div className="space-y-1.5">
-                      <Label htmlFor="firstName" className="text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-widest text-text-tertiary">First Name</Label>
-                      <Input 
-                        id="firstName" 
-                        value={formData.firstName}
-                        onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
-                        className="h-9 bg-bg-sunken border-border-default text-text-primary font-dmsans text-[11px] sm:text-[13px] focus:border-brand-default/50" 
-                      />
-                   </div>
-                   <div className="space-y-1.5">
-                      <Label htmlFor="lastName" className="text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-widest text-text-tertiary">Last Name</Label>
-                      <Input 
-                        id="lastName" 
-                        value={formData.lastName}
-                        onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                        className="h-9 bg-bg-sunken border-border-default text-text-primary font-dmsans text-[11px] sm:text-[13px] focus:border-brand-default/50" 
-                      />
-                   </div>
+          <Card className="bg-bg-surface border-border-default shadow-sm border-t-4 border-t-brand-default">
+            <CardHeader className="pb-3 border-b border-border-subtle bg-bg-panel/30">
+               <CardTitle className="text-[10px] sm:text-[11px] font-syne font-bold uppercase tracking-widest text-text-primary">Personal Details</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6 space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">First Name</Label>
+                  <Input 
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                    placeholder="Enter first name"
+                    className="h-9 text-[13px] bg-bg-sunken border-border-default focus:border-brand-default transition-fast"
+                  />
                 </div>
-
-                <div className="space-y-1.5">
-                   <Label htmlFor="email" className="text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-widest text-text-tertiary">Work Email Address</Label>
-                   <div className="relative group">
-                      <Mail className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-tertiary group-focus-within:text-brand-text transition-colors" />
-                      <Input id="email" value={profile?.email} disabled className="pl-8 h-9 bg-bg-sunken border-border-default text-text-primary font-dmsans text-[11px] sm:text-[13px] opacity-60 cursor-not-allowed" />
-                   </div>
-                   <p className="text-[9px] sm:text-[10px] text-text-tertiary font-medium mt-1">To change your work email, please contact IT Support.</p>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Last Name</Label>
+                  <Input 
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                    placeholder="Enter last name"
+                    className="h-9 text-[13px] bg-bg-sunken border-border-default focus:border-brand-default transition-fast"
+                  />
                 </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5">
-                   <div className="space-y-1.5">
-                      <Label htmlFor="phone" className="text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-widest text-text-tertiary">Phone Number</Label>
-                      <div className="relative">
-                         <Phone className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-tertiary" />
-                         <Input 
-                            id="phone" 
-                            value={formData.phoneNumber}
-                            onChange={(e) => setFormData(prev => ({ ...prev, phoneNumber: e.target.value }))}
-                            className="pl-8 h-9 bg-bg-sunken border-border-default text-text-primary font-dmsans text-[11px] sm:text-[13px] focus:border-brand-default/50" 
-                          />
-                      </div>
-                   </div>
-                   <div className="space-y-1.5">
-                      <Label htmlFor="location" className="text-[9px] sm:text-[10px] font-mono font-bold uppercase tracking-widest text-text-tertiary">Office Location</Label>
-                      <div className="relative">
-                         <MapPin className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-tertiary" />
-                         <Input 
-                            id="location" 
-                            value={formData.officeLocation}
-                            onChange={(e) => setFormData(prev => ({ ...prev, officeLocation: e.target.value }))}
-                            className="pl-8 h-9 bg-bg-sunken border-border-default text-text-primary font-dmsans text-[11px] sm:text-[13px] focus:border-brand-default/50" 
-                          />
-                      </div>
-                   </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Phone Number</Label>
+                  <Input 
+                    value={formData.phoneNumber}
+                    onChange={(e) => setFormData({...formData, phoneNumber: e.target.value})}
+                    placeholder="+62..."
+                    className="h-9 text-[13px] bg-bg-sunken border-border-default focus:border-brand-default transition-fast"
+                  />
                 </div>
-             </CardContent>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Office Location</Label>
+                  <Input 
+                    value={formData.officeLocation}
+                    onChange={(e) => setFormData({...formData, officeLocation: e.target.value})}
+                    placeholder="e.g. Jakarta SCBD"
+                    className="h-9 text-[13px] bg-bg-sunken border-border-default focus:border-brand-default transition-fast"
+                  />
+                </div>
+              </div>
+            </CardContent>
           </Card>
 
-          <Card className="bg-bg-surface border-border-default shadow-sm relative overflow-hidden">
-             <div className="absolute inset-0 bg-brand-default/5 pointer-events-none" />
-             <CardHeader className="relative border-b border-border-subtle bg-bg-panel/30 py-3">
-               <CardTitle className="text-[9px] sm:text-[10px] font-syne font-bold uppercase tracking-widest text-text-tertiary">Connected Engineering Accounts</CardTitle>
-             </CardHeader>
-             <CardContent className="relative pt-4 sm:pt-6 space-y-3 pb-4">
-                {[
-                  { name: "GitHub", handle: profile?.employeeProfile?.githubHandle || "Not connected", connected: !!profile?.employeeProfile?.githubHandle, icon: Github, key: "githubHandle" },
-                  { name: "AWS Console", handle: profile?.employeeProfile?.awsHandle || "Not connected", connected: !!profile?.employeeProfile?.awsHandle, icon: Cloud, key: "awsHandle" },
-                  { name: "Slack", handle: profile?.employeeProfile?.slackHandle || "Not connected", connected: !!profile?.employeeProfile?.slackHandle, icon: Slack, key: "slackHandle" },
-                ].map((account, i) => (
-                  <div key={i} className="flex items-center justify-between p-2.5 sm:p-3 rounded-lg bg-bg-surface border border-border-default shadow-sm group hover:border-brand-default/30 transition-all hover:translate-x-1">
-                     <div className="flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-md bg-bg-sunken border border-border-default flex items-center justify-center text-text-secondary group-hover:text-brand-text transition-all group-hover:rotate-6">
-                           <account.icon className="h-4 w-4" />
-                        </div>
-                        <div className="min-w-0">
-                           <p className="text-[11px] sm:text-[12px] font-semibold text-text-primary tracking-tight">{account.name}</p>
-                           <p className={cn("text-[9px] sm:text-[10px] font-mono", account.connected ? "text-brand-text" : "text-text-tertiary")}>{account.handle}</p>
-                        </div>
-                     </div>
-                     <Button 
-                        variant="outline" 
-                        size="sm" 
-                        disabled={connectMutation.isPending}
-                        onClick={() => {
-                          if (!account.connected) {
-                            const handle = prompt(`Enter your ${account.name} handle:`);
-                            if (handle) connectMutation.mutate({ [account.key]: handle });
-                          } else {
-                            if (confirm(`Disconnect ${account.name}?`)) connectMutation.mutate({ [account.key]: null });
-                          }
-                        }}
-                        className={cn(
-                          "h-7 text-[9px] font-bold uppercase tracking-widest transition-all",
-                          account.connected 
-                            ? "border-emerald-500/30 text-emerald-500 hover:bg-emerald-500/10 active:scale-95" 
-                            : "border-border-default text-text-secondary hover:bg-bg-elevated active:scale-95"
-                        )}
-                     >
-                        {account.connected ? <><Check className="h-3 w-3 mr-1" /> Connected</> : "Connect"}
-                     </Button>
+          <Card className="bg-bg-surface border-border-default shadow-sm">
+            <CardHeader className="pb-3 border-b border-border-subtle bg-bg-panel/30">
+               <CardTitle className="text-[10px] sm:text-[11px] font-syne font-bold uppercase tracking-widest text-text-primary">Connected Accounts</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-bg-sunken border border-border-default hover:border-brand-default/30 transition-fast group">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 flex items-center justify-center bg-white rounded-lg shadow-sm border border-border-subtle group-hover:rotate-3 transition-fast">
+                       <Github className="h-5 w-5 text-[#181717]" />
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-bold text-text-primary">GitHub Integration</p>
+                      <p className="text-[11px] text-text-tertiary">Connected as @wi5nuu</p>
+                    </div>
                   </div>
-                ))}
-             </CardContent>
+                  <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold text-crimson-500 hover:bg-crimson-500/10">DISCONNECT</Button>
+                </div>
+                
+                <div className="flex items-center justify-between p-3 rounded-xl bg-bg-sunken border border-border-default opacity-60">
+                   <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 flex items-center justify-center bg-white rounded-lg shadow-sm border border-border-subtle">
+                       <Slack className="h-5 w-5 text-[#4A154B]" />
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-bold text-text-primary">Slack Workspace</p>
+                      <p className="text-[11px] text-text-tertiary">Not connected</p>
+                    </div>
+                  </div>
+                  <Button size="sm" className="h-7 text-[10px] font-bold bg-brand-muted text-brand-text hover:bg-brand-default/20">CONNECT</Button>
+                </div>
+              </div>
+            </CardContent>
           </Card>
+
+          <div className="flex justify-end p-4 border border-dashed border-border-default rounded-xl bg-bg-panel/10">
+             <Button variant="ghost" className="text-[11px] font-bold text-text-tertiary hover:text-crimson-500 transition-fast">
+                DELETE ACCOUNT PERMANENTLY
+             </Button>
+          </div>
         </div>
       </div>
     </motion.div>

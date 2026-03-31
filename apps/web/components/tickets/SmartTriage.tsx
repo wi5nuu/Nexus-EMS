@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Sparkles, Loader2, Check, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Sparkles, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { apiFetch } from "@/lib/auth";
 
@@ -17,8 +17,8 @@ export function SmartTriage({ ticketId }: { ticketId: string }) {
   const [result, setResult] = useState<TriageResult | null>(null);
   const queryClient = useQueryClient();
 
-  const triageMutation = useMutation({
-    mutationFn: () => apiFetch(`/api/v1/ai/triage/${ticketId}`, { method: "POST" }),
+  const triageMutation = useMutation<TriageResult>({
+    mutationFn: () => apiFetch<TriageResult>(`/api/v1/ai/triage/${ticketId}`, { method: "POST" }),
     onSuccess: (data) => {
       setResult(data);
     },

@@ -1,18 +1,34 @@
 "use client";
 
-import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { 
   Calendar, Clock, CheckCircle2, XCircle, 
-  Plus, History, Filter, Loader2, AlertCircle 
+  Plus, AlertCircle, Filter 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { apiFetch } from "@/lib/auth";
 
-async function fetchLeaveBalances() {
+interface LeaveBalance {
+  type: string;
+  accrued: number;
+  used: number;
+  pending: number;
+}
+
+interface LeaveRequest {
+  id: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  reason: string;
+}
+
+async function fetchLeaveBalances(): Promise<LeaveBalance[]> {
   try {
-    return await apiFetch("/api/v1/hr/leave/balance");
+    const res = await apiFetch<LeaveBalance[]>("/api/v1/hr/leave/balance");
+    return res || [];
   } catch {
     return [
       { type: "ANNUAL", accrued: 12, used: 4, pending: 2 },
@@ -22,26 +38,26 @@ async function fetchLeaveBalances() {
   }
 }
 
-async function fetchLeaveRequests() {
+async function fetchLeaveRequests(): Promise<LeaveRequest[]> {
   try {
-    return await apiFetch("/api/v1/hr/leave/requests");
+    const res = await apiFetch<LeaveRequest[]>("/api/v1/hr/leave/requests");
+    return res || [];
   } catch {
     return [
       { id: "1", type: "ANNUAL", startDate: "2026-04-10", endDate: "2026-04-12", status: "APPROVED", reason: "Family vacation" },
       { id: "2", type: "SICK", startDate: "2026-03-15", endDate: "2026-03-16", status: "APPROVED", reason: "Fever" },
-      { id: "3", type: "ANNUAL", startDate: "2026-05-01", endDate: "2026-05-05", status: "PENDING", reason: "Personal trip" },
+      { id: "3", type: "ANNUAL", startDate: "2026-06-01", endDate: "2026-06-05", status: "PENDING", reason: "Summer break" },
     ];
   }
 }
 
 export default function LeavePage() {
-  const queryClient = useQueryClient();
-  const { data: balances, isLoading: loadingBalances } = useQuery({
+  const { data: balances, isLoading: loadingBalances } = useQuery<LeaveBalance[]>({
     queryKey: ["leave-balances"],
     queryFn: fetchLeaveBalances,
   });
 
-  const { data: requests, isLoading: loadingRequests } = useQuery({
+  const { data: requests, isLoading: loadingRequests } = useQuery<LeaveRequest[]>({
     queryKey: ["leave-requests"],
     queryFn: fetchLeaveRequests,
   });
@@ -68,7 +84,7 @@ export default function LeavePage() {
             <div key={i} className="h-32 rounded-2xl bg-white/5 animate-pulse" />
           ))
         ) : (
-          balances?.map((b: any, i: number) => (
+          balances?.map((b: { type: string; accrued: number; used: number; pending: number }, i: number) => (
             <Card key={i} className="bg-card border-border/50 overflow-hidden relative group">
               <div className="absolute top-0 right-0 w-20 h-20 bg-electric-violet/5 rounded-full blur-2xl -mr-4 -mt-4 transition-all group-hover:bg-electric-violet/10" />
               <CardHeader className="pb-2">
@@ -138,7 +154,7 @@ export default function LeavePage() {
                     <td colSpan={5} className="px-4 py-12 text-center text-muted-foreground">No leave history found.</td>
                   </tr>
                 ) : (
-                  requests?.map((req: any) => (
+                  requests?.map((req: { id: string; type: string; startDate: string; endDate: string; status: string; reason: string }) => (
                     <tr key={req.id} className="hover:bg-white/5 transition-colors group">
                       <td className="px-4 py-4 font-medium text-foreground">
                         <div className="flex items-center gap-2">

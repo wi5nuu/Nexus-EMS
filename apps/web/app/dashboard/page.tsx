@@ -1,16 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
 import {
-  TrendingUp, Users, Ticket, Layers,
-  CheckCircle2, Clock,
+  Layers, Clock,
   Download, Filter, MoreHorizontal,
-  Circle, Calendar
+  Circle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from "recharts";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { motion } from "framer-motion";
@@ -31,347 +29,280 @@ const translations = {
   },
   id: {
     greeting: "Selamat pagi, Wisnu 👋",
-    sprint: ["Sprint 14", "Tersisa 6 hari", "14 tugas terbuka"],
+    sprint: ["Sprint 14", "6 hari lagi", "14 tugas terbuka"],
     export: "Ekspor",
-    metrics: { scale: "TOTAL SKALA", open: "ISU TERBUKA", sla: "KEPATUHAN SLA", velo: "KECEPATAN TIM" },
-    activity: { title: "Aktivitas Mingguan", desc: "Commit & tinjauan kode" },
+    metrics: { scale: "SKALA TOTAL", open: "ISU TERBUKA", sla: "KEPATUHAN SLA", velo: "VELOSITAS TIM" },
+    activity: { title: "Aktivitas Mingguan", desc: "Komit & ulasan kode" },
     tasks: { title: "Tugas Saya", desc: "Jatuh tempo hari ini & segera", viewAll: "Lihat semua tugas" },
-    incidents: { title: "Insiden Kritis", desc: "Tiket prioritas tinggi yang aktif", viewAll: "Lihat semua" },
+    incidents: { title: "Insiden Kritis", desc: "Tiket prioritas tinggi aktif", viewAll: "Lihat semua" },
     team: { title: "Tim Online", desc: "3 aktif" }
-  },
-  zh: {
-    greeting: "早上好，Wisnu 👋",
-    sprint: ["第14冲刺", "剩余6天", "14个开放任务"],
-    export: "导出",
-    metrics: { scale: "总规模", open: "开放问题", sla: "SLA 达成率", velo: "团队速度" },
-    activity: { title: "每周活动", desc: "提交和代码审查" },
-    tasks: { title: "我的任务", desc: "今天到期及将近", viewAll: "查看所有任务" },
-    incidents: { title: "严重事件", desc: "活动的高优先级工单", viewAll: "查看全部" },
-    team: { title: "在线团队", desc: "3人在线" }
-  },
-  es: {
-    greeting: "Buenos días, Wisnu 👋",
-    sprint: ["Sprint 14", "Faltan 6 días", "14 tareas abiertas"],
-    export: "Exportar",
-    metrics: { scale: "ESCALA TOTAL", open: "PROBLEMAS", sla: "CUMPLIMIENTO SLA", velo: "RAPIDEZ EQUIPO" },
-    activity: { title: "Actividad Semanal", desc: "Commits y revisiones de código" },
-    tasks: { title: "Mis Tareas", desc: "Vence hoy y pronto", viewAll: "Ver todas las tareas" },
-    incidents: { title: "Incidentes Críticos", desc: "Tickets activos de alta prioridad", viewAll: "Ver todo" },
-    team: { title: "Equipo en Línea", desc: "3 activos" }
-  },
-  ja: {
-    greeting: "おはようございます、Wisnu 👋",
-    sprint: ["スプリント 14", "残り 6 日", "オープンタスク 14 件"],
-    export: "エクスポート",
-    metrics: { scale: "総規模", open: "未解決の問題", sla: "SLA 遵守率", velo: "チームのベロシティ" },
-    activity: { title: "今週のアクティビティ", desc: "コミットとコードレビュー" },
-    tasks: { title: "マインタスク", desc: "今日と近日中の期限", viewAll: "すべてのタスクを表示" },
-    incidents: { title: "重大なインシデント", desc: "アクティブな高優先度のチケット", viewAll: "すべて表示" },
-    team: { title: "オンラインチーム", desc: "3人がオンライン" }
   }
 };
 
-const sprintData = [
-  { name: "Mon", commits: 24, reviews: 8 },
-  { name: "Tue", commits: 38, reviews: 14 },
-  { name: "Wed", commits: 20, reviews: 9 },
-  { name: "Thu", commits: 45, reviews: 18 },
-  { name: "Fri", commits: 30, reviews: 11 },
-  { name: "Sat", commits: 12, reviews: 3 },
-  { name: "Sun", commits: 8, reviews: 2 },
+const barData = [
+  { name: "Mon", commits: 45, reviews: 12 },
+  { name: "Tue", commits: 52, reviews: 18 },
+  { name: "Wed", commits: 38, reviews: 15 },
+  { name: "Thu", commits: 65, reviews: 22 },
+  { name: "Fri", commits: 48, reviews: 20 },
+  { name: "Sat", commits: 15, reviews: 5 },
+  { name: "Sun", commits: 10, reviews: 3 },
 ];
-
-const recentTickets = [
-  { id: "NX-491", title: "Race condition in rate-limiter", priority: "CRITICAL", status: "IN_PROGRESS", assignee: "AK", ago: "2h" },
-  { id: "NX-487", title: "Memory leak in worker pool", priority: "HIGH", status: "TRIAGED", assignee: "RS", ago: "4h" },
-  { id: "NX-482", title: "API gateway 504 timeout spike", priority: "CRITICAL", status: "OPEN", assignee: "DH", ago: "6h" },
-  { id: "NX-476", title: "SSO logout redirect broken", priority: "MEDIUM", status: "IN_PROGRESS", assignee: "AK", ago: "1d" },
-];
-
-const teamStatus = [
-  { name: "Arif K.", role: "Eng Lead", status: "online", task: "NX-491" },
-  { name: "Rania S.", role: "Backend", status: "away", task: "NX-487" },
-  { name: "Damar H.", role: "DevOps", status: "online", task: "Infra" },
-  { name: "Putri A.", role: "Frontend", status: "offline", task: "—" },
-  { name: "Budi M.", role: "QA", status: "online", task: "NX-482" },
-];
-
-const myTasks = [
-  { id: "NX-491", title: "Fix race condition in rate-limiter", due: "Overdue", dueColor: "text-crimson-500", done: false },
-  { id: "NX-394", title: "Update API documentation for v2.4", due: "Today", dueColor: "text-amber-500", done: false },
-  { id: "NX-381", title: "Deploy Redis cache layer", due: "Tomorrow", dueColor: "text-text-tertiary", done: false },
-  { id: "NX-370", title: "Code review: auth module refactor", due: "Jun 20", dueColor: "text-text-tertiary", done: true },
-];
-
-const priorityColors: Record<string, string> = {
-  CRITICAL: "text-crimson-500 bg-crimson-500/10",
-  HIGH: "text-amber-500 bg-amber-500/10",
-  MEDIUM: "text-sapphire-400 bg-sapphire-500/10",
-  LOW: "text-text-tertiary bg-bg-elevated",
-};
-
-const statusColors: Record<string, string> = {
-  IN_PROGRESS: "text-amber-500",
-  TRIAGED: "text-sapphire-400",
-  OPEN: "text-text-tertiary",
-  RESOLVED: "text-emerald-500",
-};
-
-const onlineColors: Record<string, string> = {
-  online: "bg-emerald-500",
-  away: "bg-amber-500",
-  offline: "bg-text-tertiary",
-};
-
-const tooltipStyle = {
-  backgroundColor: "var(--bg-elevated)",
-  border: "1px solid var(--border-default)",
-  borderRadius: "6px",
-  color: "var(--text-primary)",
-  fontSize: "11px",
-};
 
 export default function DashboardPage() {
   const router = useRouter();
   const { lang } = useLanguage();
-  const [mounted, setMounted] = useState(false);
-  
-  useEffect(() => setMounted(true), []);
-  
   const t = translations[lang as keyof typeof translations] || translations.en;
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   if (!mounted) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35, ease: "easeOut" }}
-      className="space-y-4"
-    >
-      {/* Greeting */}
-      <div className="flex items-start justify-between gap-2.5">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+      {/* Top Header Section */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-lg font-syne font-bold tracking-tight text-text-primary leading-tight">
+          <h1 className="font-syne font-bold text-2xl text-text-primary tracking-tight">
             {t.greeting}
           </h1>
-          <p className="font-dmsans text-[11px] sm:text-xs text-text-secondary mt-0.5">
-            {t.sprint[0]} · <span className="text-amber-500 font-medium">{t.sprint[1]}</span> · {t.sprint[2]}
-          </p>
-        </div>
-        <div className="flex items-center gap-1.5 shrink-0">
-          <Button variant="outline" className="h-[26px] px-2 font-dmsans text-[10px] sm:text-xs border-border-default bg-bg-surface hover:bg-bg-elevated text-text-secondary hidden sm:flex">
-            <Calendar className="mr-1.5 h-3 w-3" />
-            Last 7 Days
-          </Button>
-          <Button
-            className="h-[26px] px-2.5 font-dmsans text-[10px] sm:text-xs bg-brand-default hover:bg-brand-hover text-white font-semibold"
-            onClick={() => alert("Exporting system report as PDF...")}
-          >
-            <Download className="mr-1.5 h-3 w-3" />
-            {t.export}
-          </Button>
-        </div>
-      </div>
-
-      {/* KPI Cards — Horizontal scroll on mobile, 4 cols desktop */}
-      <div className="flex overflow-x-auto snap-x snap-mandatory lg:grid lg:grid-cols-4 gap-2.5 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 no-scrollbar">
-        <MetricCard
-          className="min-w-[140px] w-[42vw] sm:w-auto shrink-0 snap-center"
-          label={t.metrics.scale}
-          value="48"
-          unit="active"
-          trend={2.4}
-          trendDirection="higher-is-better"
-          status="normal"
-          progress={80}
-        />
-        <MetricCard
-          className="min-w-[140px] w-[42vw] sm:w-auto shrink-0 snap-center"
-          label={t.metrics.open}
-          value="3"
-          trend={-40}
-          trendDirection="lower-is-better"
-          status="warning"
-          progress={30}
-        />
-        <MetricCard
-          className="min-w-[140px] w-[42vw] sm:w-auto shrink-0 snap-center"
-          label={t.metrics.sla}
-          value="94.2"
-          unit="%"
-          trend={1.2}
-          trendDirection="higher-is-better"
-          status="success"
-          progress={94}
-        />
-        <MetricCard
-          className="min-w-[140px] w-[42vw] sm:w-auto shrink-0 snap-center"
-          label={t.metrics.velo}
-          value="68.4"
-          unit="pts"
-          trend={8.1}
-          trendDirection="higher-is-better"
-          status="normal"
-          progress={72}
-        />
-      </div>
-
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5">
-        {/* Activity Chart */}
-        <div className="lg:col-span-7 bg-bg-surface border border-border-subtle rounded-lg p-3 shadow-sm">
-          <div className="flex items-center justify-between mb-2.5">
-            <div>
-              <h3 className="font-syne font-bold text-xs sm:text-[13px] text-text-primary">{t.activity.title}</h3>
-              <p className="font-dmsans text-[10px] sm:text-xs text-text-tertiary">{t.activity.desc}</p>
-            </div>
-            <Button variant="ghost" size="icon" className="h-6 w-6 text-text-tertiary">
-              <MoreHorizontal className="h-3.5 w-3.5" />
-            </Button>
+          <div className="flex items-center gap-2 mt-1.5 font-dmsans text-[13px] text-text-tertiary">
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-brand-default/10 text-brand-text font-bold text-[10px] tracking-widest border border-brand-default/20">
+              {t.sprint[0]}
+            </span>
+            <span className="flex items-center gap-1">
+              <Clock className="h-3 w-3" /> {t.sprint[1]}
+            </span>
+            <span className="text-border-default opacity-50">•</span>
+            <span>{t.sprint[2]}</span>
           </div>
-          <div className="h-[140px] sm:h-[160px]">
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="h-9 px-4 border-border-default text-[13px] font-bold text-text-secondary hover:bg-bg-elevated transition-fast">
+            <Filter className="h-3.5 w-3.5 mr-2" /> Filter
+          </Button>
+          <Button className="h-9 px-4 bg-brand-default hover:bg-brand-hover text-white text-[13px] font-bold transition-fast shadow-brand">
+            <Download className="h-3.5 w-3.5 mr-2" /> {t.export}
+          </Button>
+        </div>
+      </div>
+
+      {/* Primary Metrics Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <MetricCard 
+          label={t.metrics.scale} 
+          value={1280} 
+          trend={12.5}
+          status="normal"
+        />
+        <MetricCard 
+          label={t.metrics.open} 
+          value={42} 
+          trend={-10}
+          status="warning"
+        />
+        <MetricCard 
+          label={t.metrics.sla} 
+          value="99.4%" 
+          trend={0.2}
+          status="success"
+        />
+        <MetricCard 
+          label={t.metrics.velo} 
+          value={156} 
+          trend={18}
+          status="normal"
+        />
+      </div>
+
+      {/* Main Charts & Activity Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Weekly Productivity */}
+        <div className="lg:col-span-8 bg-bg-surface border border-border-default rounded-2xl shadow-sm p-6 overflow-hidden">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h3 className="font-syne font-bold text-lg text-text-primary tracking-tight">{t.activity.title}</h3>
+              <p className="text-text-tertiary font-dmsans text-[13px]">{t.activity.desc}</p>
+            </div>
+            <div className="flex items-center gap-4 text-[11px] font-bold text-text-tertiary">
+               <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 rounded-full bg-brand-default" /> Commits
+              </div>
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 rounded-full bg-brand-muted" /> Reviews
+              </div>
+            </div>
+          </div>
+          <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={sprintData} margin={{ top: 0, right: 0, left: -28, bottom: 0 }} barCategoryGap="40%">
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" />
-                <XAxis dataKey="name" stroke="var(--text-tertiary)" fontSize={9} tickLine={false} axisLine={false} />
-                <YAxis stroke="var(--text-tertiary)" fontSize={9} tickLine={false} axisLine={false} />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: "var(--border-subtle)" }} />
-                <Bar dataKey="commits" fill="var(--violet-500)" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="reviews" fill="var(--teal-500)" radius={[2, 2, 0, 0]} />
+              <BarChart data={barData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" opacity={0.5} />
+                <XAxis 
+                  dataKey="name" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }} 
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: 'var(--text-tertiary)', fontSize: 11 }}
+                />
+                <Tooltip 
+                  cursor={{ fill: 'var(--bg-sunken)', opacity: 0.5 }} 
+                  contentStyle={{ 
+                    backgroundColor: 'var(--bg-panel)', 
+                    border: '1px solid var(--border-default)',
+                    borderRadius: '12px',
+                    fontSize: '12px',
+                    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
+                  }}
+                />
+                <Bar dataKey="commits" fill="var(--brand-default)" radius={[4, 4, 0, 0]} barSize={24} />
+                <Bar dataKey="reviews" fill="var(--brand-muted)" radius={[4, 4, 0, 0]} barSize={24} />
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex items-center gap-3 mt-2">
-            <div className="flex items-center gap-1.5 text-[10px] text-text-tertiary">
-              <div className="h-2 w-2 rounded-sm bg-violet-500" /> Commits
-            </div>
-            <div className="flex items-center gap-1.5 text-[10px] text-text-tertiary">
-              <div className="h-2 w-2 rounded-sm bg-teal-500" /> Reviews
-            </div>
-          </div>
         </div>
 
-        {/* My Tasks */}
-        <div className="lg:col-span-5 bg-bg-surface border border-border-subtle rounded-lg p-3 shadow-sm flex flex-col">
-          <div className="flex items-center justify-between mb-2">
-            <div>
-              <h3 className="font-syne font-bold text-xs sm:text-[13px] text-text-primary">{t.tasks.title}</h3>
-              <p className="font-dmsans text-[10px] sm:text-xs text-text-tertiary">{t.tasks.desc}</p>
+        {/* Status Breakdown */}
+        <div className="lg:col-span-4 space-y-6">
+          <div className="bg-bg-surface border border-border-default rounded-2xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-syne font-bold text-lg text-text-primary tracking-tight">{t.tasks.title}</h3>
+              <MoreHorizontal className="h-4 w-4 text-text-tertiary" />
             </div>
-            <Button variant="ghost" size="icon" className="h-6 w-6 text-text-tertiary">
-              <Filter className="h-3.5 w-3.5" />
+            <div className="space-y-4">
+              {[
+                { label: "Frontend Optimization", code: "NEX-241", status: "In Progress", color: "text-brand-text" },
+                { label: "Auth Middleware Refactor", code: "NEX-198", status: "Blocker", color: "text-crimson-500" },
+                { label: "Design System Tokens", code: "NEX-205", status: "Review", color: "text-amber-500" },
+                { label: "Prisma Schema Update", code: "NEX-214", status: "Done", color: "text-emerald-500" },
+              ].map((task) => (
+                <div key={task.code} className="flex items-center justify-between group cursor-pointer">
+                  <div className="flex items-center gap-3">
+                    <div className="h-8 w-8 rounded-lg bg-bg-sunken border border-border-subtle flex items-center justify-center shrink-0 group-hover:border-brand-default transition-fast">
+                      <Layers className="h-4 w-4 text-text-tertiary group-hover:text-brand-text" />
+                    </div>
+                    <div>
+                      <p className="text-[13px] font-bold text-text-primary group-hover:text-brand-text transition-fast leading-none mb-1">{task.label}</p>
+                      <p className="text-[10px] font-mono font-bold text-text-tertiary uppercase tracking-widest">{task.code}</p>
+                    </div>
+                  </div>
+                  <span className={cn("text-[10px] font-bold uppercase tracking-wider", task.color)}>{task.status}</span>
+                </div>
+              ))}
+            </div>
+            <Button variant="ghost" className="w-full mt-6 h-9 text-[11px] font-bold text-text-tertiary hover:text-brand-text hover:bg-brand-default/5 transition-fast">
+              {t.tasks.viewAll}
             </Button>
           </div>
-          <div className="space-y-1.5 flex-1">
-            {myTasks.map((task) => (
-              <div
-                key={task.id}
-                className={cn(
-                  "flex items-center gap-2.5 p-2 rounded-md border transition-fast cursor-pointer",
-                  task.done ? "border-transparent opacity-40" : "border-border-subtle hover:border-border-default hover:bg-bg-elevated"
-                )}
-              >
-                {task.done
-                  ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
-                  : <Circle className="h-3.5 w-3.5 text-text-tertiary shrink-0" />
-                }
-                <div className="flex-1 min-w-0">
-                  <p className={cn("text-[11px] font-medium truncate", task.done ? "line-through text-text-tertiary" : "text-text-primary")}>
-                    {task.title}
-                  </p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[9px] font-mono text-text-tertiary">{task.id}</span>
-                    <span className={cn("text-[9px] font-medium", task.dueColor)}>{task.due}</span>
-                  </div>
-                </div>
-              </div>
-            ))}
+
+          <div className="bg-brand-default rounded-2xl p-6 text-white relative overflow-hidden shadow-brand group cursor-pointer hover:scale-[1.02] transition-fast">
+            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-fast">
+              <Layers className="h-24 w-24" />
+            </div>
+            <div className="relative z-10">
+              <p className="text-[10px] font-mono font-bold uppercase tracking-widest opacity-80 mb-2">QUICK ACCESS</p>
+              <h3 className="font-syne font-bold text-xl mb-1 tracking-tight">Active Sprints</h3>
+              <p className="text-[13px] font-dmsans opacity-80 leading-snug">Monitor real-time progress of all ongoing development cycles.</p>
+              <Button size="sm" className="mt-4 h-8 bg-white text-brand-default hover:bg-brand-muted hover:text-brand-text font-bold text-[11px] transition-fast rounded-lg" onClick={() => router.push('/dashboard/projects')}>
+                Go to Projects <Circle className="h-2 w-2 ml-2 fill-current" />
+              </Button>
+            </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-2.5 w-full h-7 text-[10px] border-border-subtle text-text-secondary hover:text-text-primary"
-            onClick={() => router.push("/dashboard/tickets")}
-          >
-            {t.tasks.viewAll}
-          </Button>
         </div>
       </div>
 
-      {/* Bottom Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-2.5">
-        {/* Critical Incidents */}
-        <div className="lg:col-span-8 bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden flex flex-col">
-          <div className="flex items-center justify-between px-3 py-2 border-b border-border-subtle">
+      {/* Lower Section: Incidents & Team */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 bg-bg-surface border border-border-default rounded-2xl shadow-sm overflow-hidden">
+          <div className="px-6 py-4 border-b border-border-subtle bg-bg-panel/20 flex items-center justify-between">
             <div>
-              <h3 className="font-syne font-bold text-xs sm:text-[13px] text-text-primary">{t.incidents.title}</h3>
-              <p className="font-dmsans text-[10px] sm:text-xs text-text-tertiary">{t.incidents.desc}</p>
+              <h3 className="font-syne font-bold text-text-primary tracking-tight">{t.incidents.title}</h3>
+              <p className="text-[11px] text-text-tertiary font-medium">{t.incidents.desc}</p>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-[22px] px-2 text-[10px] border-border-subtle text-text-secondary font-medium"
-              onClick={() => router.push("/dashboard/tickets")}
-            >
-              View all
+            <Button variant="ghost" className="h-8 text-[11px] font-bold text-brand-text hover:bg-brand-default/5">
+              {t.incidents.viewAll}
             </Button>
           </div>
           <div className="divide-y divide-border-subtle">
-            {recentTickets.map((t) => (
-              <div key={t.id} className="flex items-center gap-2 px-3.5 py-2.5 hover:bg-bg-elevated transition-fast cursor-pointer group">
-                <span className="text-[10px] font-mono font-bold text-text-tertiary w-[52px] shrink-0">{t.id}</span>
-                <p className="flex-1 text-[11px] font-medium text-text-primary truncate group-hover:text-brand-text transition-fast min-w-0">
-                  {t.title}
-                </p>
-                <div className="flex items-center gap-1.5 shrink-0">
-                  <span className={cn("text-[9px] font-bold px-1.5 py-0.5 rounded", priorityColors[t.priority])}>
-                    {t.priority === "CRITICAL" ? "CRIT" : t.priority}
-                  </span>
-                  <div className="h-5 w-5 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-[9px] font-bold text-violet-400 shrink-0">
-                    {t.assignee}
-                  </div>
-                  <span className="text-[9px] text-text-tertiary w-6 text-right shrink-0">{t.ago}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Team Online */}
-        <div className="lg:col-span-4 bg-bg-surface border border-border-subtle rounded-lg shadow-sm overflow-hidden flex flex-col">
-          <div className="flex items-center justify-between px-3 py-2 border-b border-border-subtle">
-            <h3 className="font-syne font-bold text-xs sm:text-[13px] text-text-primary">Team Online</h3>
-            <span className="text-[10px] font-mono text-emerald-500 font-bold">
-              {teamStatus.filter(t => t.status === "online").length} active
-            </span>
-          </div>
-          <div className="divide-y divide-border-subtle">
-            {teamStatus.map((member) => (
-              <div key={member.name} className="flex items-center gap-2.5 px-3.5 py-2 hover:bg-bg-elevated transition-fast">
-                <div className="relative shrink-0">
-                  <div className="h-6 w-6 rounded-full bg-violet-500/20 border border-violet-500/30 flex items-center justify-center text-[9px] font-bold text-violet-400">
-                    {member.name.split(" ").map(n => n[0]).join("")}
-                  </div>
+            {[
+              { id: "INC-882", title: "API latency increase in ap-southeast-1", severity: "HIGH", time: "14m ago" },
+              { id: "INC-881", title: "Auth sessions failing on mobile clients", severity: "CRITICAL", time: "1h ago" },
+              { id: "INC-875", title: "Minor css regression in dark mode (settings)", severity: "LOW", time: "4h ago" },
+            ].map((inc) => (
+              <div key={inc.id} className="px-6 py-3.5 flex items-center justify-between hover:bg-bg-sunken transition-fast cursor-pointer">
+                <div className="flex items-center gap-3">
                   <div className={cn(
-                    "absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border border-bg-surface",
-                    onlineColors[member.status]
+                    "h-2 w-2 rounded-full",
+                    inc.severity === 'CRITICAL' ? 'bg-crimson-500' : inc.severity === 'HIGH' ? 'bg-amber-500' : 'bg-emerald-500'
                   )} />
+                  <div>
+                    <p className="text-[13px] font-bold text-text-primary leading-tight">{inc.title}</p>
+                    <p className="text-[10px] font-mono font-bold text-text-tertiary uppercase tracking-widest mt-0.5">{inc.id} • {inc.time}</p>
+                  </div>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[11px] font-medium text-text-primary truncate">{member.name}</p>
-                  <p className="text-[9px] text-text-tertiary">{member.role}</p>
-                </div>
-                {member.task !== "—" && (
-                  <span className="text-[9px] font-mono font-bold text-text-tertiary bg-bg-elevated px-1.5 py-0.5 rounded shrink-0">
-                    {member.task}
-                  </span>
-                )}
+                <ArrowDownRight className="h-4 w-4 text-text-tertiary opacity-0 group-hover:opacity-100 transition-fast" />
               </div>
             ))}
           </div>
         </div>
+
+        <div className="bg-bg-surface border border-border-default rounded-2xl shadow-sm p-6 overflow-hidden relative">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[50px] rounded-full pointer-events-none" />
+          <h3 className="font-syne font-bold text-text-primary tracking-tight mb-1">{t.team.title}</h3>
+          <p className="text-[11px] text-text-tertiary font-medium mb-6">{t.team.desc}</p>
+          <div className="flex -space-x-2 mb-6">
+            {["A", "B", "C", "D"].map((n, i) => (
+              <div key={i} className="h-8 w-8 rounded-full border-2 border-bg-surface bg-bg-sunken flex items-center justify-center text-[10px] font-bold text-text-secondary">
+                {n}
+              </div>
+            ))}
+            <div className="h-8 w-8 rounded-full border-2 border-bg-surface bg-brand-default flex items-center justify-center text-[10px] font-bold text-white shadow-brand">
+              +12
+            </div>
+          </div>
+          <div className="p-3 rounded-xl bg-bg-panel/50 border border-border-subtle">
+             <div className="flex items-center justify-between mb-2">
+                <span className="text-[11px] font-bold text-text-tertiary">Server Load</span>
+                <span className="text-[11px] font-mono font-bold text-emerald-500">22%</span>
+             </div>
+             <div className="h-1.5 w-full bg-bg-sunken rounded-full overflow-hidden">
+                <motion.div 
+                  initial={{ width: 0 }}
+                  animate={{ width: "22%" }}
+                  transition={{ duration: 1, delay: 0.5 }}
+                  className="h-full bg-emerald-500" 
+                />
+             </div>
+          </div>
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
+}
+
+function ArrowDownRight(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      {...props}
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m7 7 10 10" />
+      <path d="M17 7v10H7" />
+    </svg>
+  )
 }

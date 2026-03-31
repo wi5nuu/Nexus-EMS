@@ -1,18 +1,16 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { 
-  ArrowLeft, Mail, Phone, MapPin, 
-  Briefcase, Calendar, Star, 
-  MessageSquare, Edit3, UserX,
-  History, Target, Award,
-  CheckCircle2, Clock, Zap, ShieldCheck
+  ArrowLeft, Mail, MapPin, 
+  Briefcase, Star, 
+  Edit3, UserX,
+  Award, ShieldCheck,
+  History as HistoryIcon
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
 export default function EmployeeProfilePage() {
@@ -20,8 +18,18 @@ export default function EmployeeProfilePage() {
   const params = useParams();
   const id = params.id as string;
 
+  interface EmployeeProfile {
+    name: string;
+    email: string;
+    role: string;
+    dept: string;
+    level: string;
+    status: string;
+    joined: string;
+  }
+
   // Mock data fetching based on ID
-  const employees: Record<string, any> = {
+  const employees: Record<string, EmployeeProfile> = {
     "1": { name: "Arif Kurniawan", email: "arif@nexus.co", role: "Principal Engineer", dept: "Engineering", level: "Senior", status: "Active", joined: "Mar 2023" },
     "2": { name: "Rania Santoso", email: "rania@nexus.co", role: "Product Manager", dept: "Product", level: "Lead", status: "On Leave", joined: "Jul 2022" },
     "3": { name: "Damar Haryanto", email: "damar@nexus.co", role: "DevOps Engineer", dept: "Infrastructure", level: "Mid", status: "Active", joined: "Sep 2023" },
@@ -59,139 +67,133 @@ export default function EmployeeProfilePage() {
            <Button variant="outline" className="flex-1 sm:flex-none h-8 border-border-default text-text-secondary hover:text-text-primary text-xs font-semibold bg-bg-surface hover:bg-bg-elevated transition-fast">
               <Edit3 className="h-3.5 w-3.5 mr-2" /> Edit Profile
            </Button>
-           <Button className="flex-1 sm:flex-none h-8 bg-brand-default hover:bg-brand-hover text-white text-xs font-bold transition-fast shadow-brand">
-              <MessageSquare className="h-3.5 w-3.5 mr-2" /> Message
+           <Button variant="outline" className="flex-1 sm:flex-none h-8 border-border-default text-crimson-500 hover:bg-crimson-500/5 text-xs font-semibold bg-bg-surface transition-fast">
+              <UserX className="h-3.5 w-3.5 mr-2" /> Deactivate
            </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Profile Sidebar */}
+        {/* Left Column: Basic Info Card */}
         <div className="lg:col-span-4 space-y-6">
-           <Card className="bg-bg-surface border-border-default shadow-sm overflow-hidden text-center scale-in">
-              <div className="h-20 bg-gradient-to-r from-brand-default/20 to-violet-500/10" />
-              <CardContent className="px-6 pb-6 -mt-10">
+           <Card className="bg-bg-surface border-border-default shadow-sm overflow-hidden border-t-4 border-brand-default">
+              <CardContent className="pt-8 pb-6 px-6 text-center">
                  <div className="relative inline-block group">
-                    <Avatar className="h-24 w-24 border-4 border-bg-surface shadow-[0_0_20px_rgba(0,0,0,0.1)] group-hover:scale-105 transition-fast cursor-pointer">
-                       <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${id}`} />
-                       <AvatarFallback className="bg-brand-muted text-brand-text font-bold text-xl">{initials}</AvatarFallback>
+                    <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-bg-surface shadow-2xl group-hover:scale-105 transition-all duration-500">
+                       <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${emp.name}`} />
+                       <AvatarFallback className="bg-bg-sunken text-2xl font-bold text-text-secondary">{initials}</AvatarFallback>
                     </Avatar>
                     <div className={cn(
-                      "absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-bg-surface",
+                      "absolute bottom-2 right-2 h-4 w-4 rounded-full border-2 border-bg-surface shadow-sm",
                       emp.status === "Active" ? "bg-emerald-500" : "bg-amber-500"
                     )} />
                  </div>
-                 <h2 className="mt-4 font-syne font-bold text-xl text-text-primary">{emp.name}</h2>
-                 <p className="text-xs font-mono font-bold text-text-tertiary uppercase tracking-widest mt-1">{emp.role}</p>
+                 <h2 className="mt-4 font-syne font-bold text-2xl text-text-primary tracking-tight">{emp.name}</h2>
+                 <p className="text-brand-text font-mono font-bold text-[11px] uppercase tracking-[0.2em] mt-1">{emp.role}</p>
                  
-                 <div className="mt-6 grid grid-cols-2 gap-px bg-border-subtle border border-border-subtle rounded-lg overflow-hidden">
-                    <div className="bg-bg-surface p-3">
-                       <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-tighter">Department</p>
-                       <p className="text-xs font-semibold text-text-primary mt-1">{emp.dept}</p>
+                 <div className="mt-8 grid grid-cols-2 gap-4">
+                    <div className="text-center p-3 rounded-xl bg-bg-sunken/50 border border-border-subtle">
+                       <p className="text-[10px] font-mono font-bold text-text-tertiary uppercase mb-1">Joined</p>
+                       <p className="text-xs font-bold text-text-primary">{emp.joined}</p>
                     </div>
-                    <div className="bg-bg-surface p-3">
-                       <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-tighter">Level</p>
-                       <p className="text-xs font-semibold text-text-primary mt-1">{emp.level}</p>
+                    <div className="text-center p-3 rounded-xl bg-bg-sunken/50 border border-border-subtle">
+                       <p className="text-[10px] font-mono font-bold text-text-tertiary uppercase mb-1">Level</p>
+                       <p className="text-xs font-bold text-text-primary">{emp.level}</p>
                     </div>
                  </div>
               </CardContent>
+              <div className="border-t border-border-subtle px-6 py-4 bg-bg-panel/30 space-y-3">
+                 <div className="flex items-center gap-3 text-xs text-text-secondary">
+                    <Mail className="h-3.5 w-3.5 text-text-tertiary" />
+                    <span>{emp.email}</span>
+                 </div>
+                 <div className="flex items-center gap-3 text-xs text-text-secondary">
+                    <Briefcase className="h-3.5 w-3.5 text-text-tertiary" />
+                    <span>{emp.dept} Department</span>
+                 </div>
+                 <div className="flex items-center gap-3 text-xs text-text-secondary">
+                    <MapPin className="h-3.5 w-3.5 text-text-tertiary" />
+                    <span>Jakarta, Indonesia (HQ)</span>
+                 </div>
+              </div>
            </Card>
 
-           <Card className="bg-bg-surface border-border-default shadow-sm">
-              <CardHeader className="pb-3 border-b border-border-subtle bg-bg-panel/30">
-                 <CardTitle className="text-[11px] font-syne font-bold uppercase tracking-widest text-text-secondary italic">Contact Intel</CardTitle>
+           <Card className="bg-bg-surface border-border-default shadow-sm overflow-hidden">
+              <CardHeader className="pb-3 border-b border-border-subtle">
+                 <CardTitle className="text-xs font-syne font-bold uppercase tracking-widest text-text-tertiary">Performance Summary</CardTitle>
               </CardHeader>
-              <CardContent className="pt-5 space-y-4">
+              <CardContent className="pt-6 space-y-6">
                  {[
-                   { icon: Mail, label: "Work Email", value: emp.email },
-                   { icon: Phone, label: "Work Phone", value: "+62 821-4456-7890" },
-                   { icon: MapPin, label: "Location", value: "Jakarta (SCBD)" },
-                   { icon: Calendar, label: "Date Joined", value: emp.joined },
-                 ].map((i) => (
-                   <div key={i.label} className="flex items-center gap-3 group">
-                      <div className="h-8 w-8 rounded-lg bg-bg-sunken border border-border-default flex items-center justify-center text-text-tertiary transition-fast group-hover:text-brand-text group-hover:border-brand-default/30">
-                         <i.icon className="h-3.5 w-3.5" />
+                   { label: "Quarterly Target", value: 94, color: "bg-emerald-500" },
+                   { label: "Commit Consistency", value: 88, color: "bg-brand-default" },
+                   { label: "SLA Adherence", value: 76, color: "bg-amber-500" },
+                 ].map((stat, i) => (
+                   <div key={i} className="space-y-2">
+                      <div className="flex justify-between items-center text-[11px] font-bold">
+                         <span className="text-text-secondary">{stat.label}</span>
+                         <span className="text-text-primary">{stat.value}%</span>
                       </div>
-                      <div className="min-w-0">
-                         <p className="text-[10px] font-bold uppercase text-text-tertiary tracking-tighter">{i.label}</p>
-                         <p className="text-[13px] font-medium text-text-primary truncate">{i.value}</p>
+                      <div className="h-1.5 w-full bg-bg-sunken rounded-full overflow-hidden">
+                         <div className={cn("h-full rounded-full transition-all duration-1000", stat.color)} style={{ width: `${stat.value}%` }} />
                       </div>
                    </div>
                  ))}
               </CardContent>
            </Card>
-
-           <Button variant="ghost" className="w-full h-10 text-crimson-500 hover:bg-crimson-500/10 transition-fast text-xs font-bold uppercase tracking-widest group">
-              <UserX className="h-4 w-4 mr-2 opacity-50 group-hover:opacity-100" /> Deactivate Employee
-           </Button>
         </div>
 
-        {/* Main Content Areas */}
+        {/* Right Column: Detailed Info & Timeline */}
         <div className="lg:col-span-8 space-y-6">
-           {/* Quick Stats Grid */}
-           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
-                { label: "Performance", value: "4.8", unit: "/5", icon: Star, color: "text-amber-500" },
-                { label: "Projects", value: "12", unit: "active", icon: Zap, color: "text-violet-500" },
-                { label: "SLA Rank", value: "Top 3", unit: "%", icon: Award, color: "text-emerald-500" },
-                { label: "Stability", value: "98", unit: "%", icon: ShieldCheck, color: "text-sapphire-500" },
-              ].map((stat, i) => (
-                <div key={i} className="bg-bg-surface border border-border-default rounded-xl p-4 shadow-sm hover:border-brand-default/40 transition-fast group">
-                   <div className="flex items-center justify-between mb-2">
-                      <stat.icon className={cn("h-4 w-4", stat.color)} />
-                      <div className="h-1.5 w-1.5 rounded-full bg-border-strong group-hover:bg-brand-default transition-fast" />
+                { icon: Award, label: "Total Awards", value: "14", color: "text-amber-500", bg: "bg-amber-500/10" },
+                { icon: ShieldCheck, label: "Security Level", value: "Tier 1", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+              ].map((item, i) => (
+                <div key={i} className="bg-bg-surface border border-border-default p-4 rounded-2xl flex items-center gap-4 shadow-sm group hover:border-brand-default transition-fast cursor-pointer">
+                   <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-fast", item.bg)}>
+                      <item.icon className={cn("h-6 w-6", item.color)} />
                    </div>
-                   <p className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">{stat.label}</p>
-                   <div className="flex items-baseline gap-1 mt-1">
-                      <span className="text-xl font-dmsans font-black text-text-primary tracking-tight">{stat.value}</span>
-                      <span className="text-[10px] font-bold text-text-tertiary">{stat.unit}</span>
+                   <div>
+                      <p className="text-[10px] font-mono font-bold text-text-tertiary uppercase tracking-widest">{item.label}</p>
+                      <p className="text-lg font-bold text-text-primary">{item.value}</p>
                    </div>
                 </div>
               ))}
            </div>
 
-           {/* Tabs Simulation (Simplified with Card Layout) */}
            <div className="space-y-6">
-              {/* Mission History */}
               <Card className="bg-bg-surface border-border-default shadow-sm border-l-4 border-l-brand-default">
                  <CardHeader className="border-b border-border-subtle pb-4">
                     <div className="flex items-center justify-between">
-                       <div className="flex items-center gap-2">
-                          <History className="h-4 w-4 text-text-secondary" />
-                          <CardTitle className="text-sm font-syne font-bold uppercase tracking-wider text-text-primary">Work History & Impact</CardTitle>
+                       <div className="flex items-center gap-2 text-text-primary">
+                          <HistoryIcon className="h-4 w-4 text-brand-text" />
+                          <CardTitle className="font-syne text-[15px]">Career Milestone Timeline</CardTitle>
                        </div>
-                       <Button variant="ghost" size="sm" className="h-7 text-xs font-bold text-brand-text">View Full Stack</Button>
+                       <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold text-text-tertiary hover:text-brand-text transition-fast">VIEW ALL</Button>
                     </div>
                  </CardHeader>
-                 <CardContent className="pt-6 space-y-6">
-                    {[
-                      { year: "2024", mission: "Platform Security Patch v4.2", role: "Main Contributor", impact: "Eliminated 2 critical CVEs" },
-                      { year: "2023", mission: "Nexus Core Migration (AWS)", role: "Infra Lead", impact: "Reduced latency by 45ms" },
-                      { year: "2023", mission: "Internal Dashboard Overhaul", role: "Architect", impact: "100% design compliance" },
-                    ].map((m, i) => (
-                      <div key={i} className="flex gap-4 group">
-                         <div className="h-10 w-[2px] bg-border-subtle mt-1 relative group-last:bg-transparent">
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 h-2.5 w-2.5 rounded-full bg-bg-surface border-2 border-brand-default" />
+                 <CardContent className="pt-6">
+                    <div className="space-y-8 relative before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-border-subtle">
+                       {[
+                         { title: "Promoted to Principal Engineer", date: "Jan 2026", desc: "Recognized for leading the Nexus EMS architecture overhaul." },
+                         { title: "Joined Nexus Corp", date: "Mar 2023", desc: "Started as Senior Fullstack Engineer in the Core platform team." },
+                       ].map((item, i) => (
+                         <div key={i} className="relative pl-10 group">
+                            <div className="absolute left-[3px] top-1 h-4 w-4 rounded-full border-2 border-bg-surface bg-brand-default shadow-brand z-10 group-hover:scale-125 transition-fast" />
+                            <p className="text-[10px] font-mono font-bold text-brand-text uppercase tracking-widest">{item.date}</p>
+                            <h4 className="text-[14px] font-bold text-text-primary mt-1">{item.title}</h4>
+                            <p className="text-xs text-text-tertiary mt-1 font-medium leading-relaxed">{item.desc}</p>
                          </div>
-                         <div className="flex-1 pb-6 group-last:pb-0">
-                            <div className="flex items-center gap-2">
-                               <span className="text-[11px] font-mono font-bold text-text-tertiary">{m.year}</span>
-                               <span className="h-1 w-1 rounded-full bg-border-strong" />
-                               <h4 className="text-[14px] font-bold text-text-primary">{m.mission}</h4>
-                            </div>
-                            <p className="text-[12px] text-text-secondary mt-1 font-medium">{m.role} · <span className="text-emerald-500 italic">{m.impact}</span></p>
-                         </div>
-                      </div>
-                    ))}
+                       ))}
+                    </div>
                  </CardContent>
               </Card>
 
-              {/* Team Collaboration */}
               <Card className="bg-bg-surface border-border-default shadow-sm">
                  <CardHeader className="border-b border-border-subtle pb-4">
                     <div className="flex items-center gap-2">
-                       <Briefcase className="h-4 w-4 text-text-secondary" />
-                       <CardTitle className="text-sm font-syne font-bold uppercase tracking-wider text-text-primary">Associated Teams</CardTitle>
+                       <Star className="h-4 w-4 text-amber-500" />
+                       <CardTitle className="font-syne text-[15px]">Team Collaboration</CardTitle>
                     </div>
                  </CardHeader>
                  <CardContent className="pt-6">

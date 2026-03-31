@@ -3,12 +3,22 @@ export function getAccessToken(): string | null {
   return localStorage.getItem("nexus_access_token");
 }
 
-export function getUser(): Record<string, any> | null {
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  role?: string;
+  avatar?: string;
+}
+
+export function getUser(): User | null {
   if (typeof window === "undefined") return null;
   const raw = localStorage.getItem("nexus_user");
   if (!raw) return null;
   try {
-    return JSON.parse(raw);
+    return JSON.parse(raw) as User;
   } catch {
     return null;
   }
@@ -20,9 +30,9 @@ export function clearAuth() {
   localStorage.removeItem("nexus_user");
 }
 
-export function updateUser(userData: Record<string, any>) {
+export function updateUser(userData: Partial<User>) {
   if (typeof window === "undefined") return;
-  const currentUser = getUser() || {};
+  const currentUser = getUser() || {} as User;
   localStorage.setItem("nexus_user", JSON.stringify({ ...currentUser, ...userData }));
 }
 
@@ -33,7 +43,7 @@ export function isAuthenticated(): boolean {
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081";
 
 /** Authenticated fetch wrapper that injects Bearer token */
-export async function apiFetch(path: string, init: RequestInit = {}): Promise<any> {
+export async function apiFetch<T = unknown>(path: string, init: RequestInit = {}): Promise<T> {
   const token = getAccessToken();
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
@@ -46,7 +56,9 @@ export async function apiFetch(path: string, init: RequestInit = {}): Promise<an
 
   if (res.status === 401) {
     clearAuth();
-    window.location.href = "/login";
+    if (typeof window !== "undefined") {
+      window.location.href = "/login";
+    }
     throw new Error("Session expired. Redirecting to login...");
   }
 

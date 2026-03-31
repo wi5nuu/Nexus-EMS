@@ -1,15 +1,13 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
 import { 
-  Target, Star, TrendingUp, Award, 
-  Plus, CheckCircle2, Search, Filter,
+  Target, Star, Award, 
+  Plus,
   History as HistoryIcon 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { apiFetch } from "@/lib/auth";
 
 const goalsData = [
   { id: "1", title: "Complete Q1 Project Alpha", progress: 85, target: "Apr 2026", status: "In Progress" },
