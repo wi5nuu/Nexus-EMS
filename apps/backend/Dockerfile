@@ -1,6 +1,10 @@
 FROM node:20-alpine AS builder
 
 WORKDIR /app
+
+# Install system dependencies for Prisma
+RUN apk add --no-cache openssl
+
 COPY package.json package-lock.json ./
 COPY apps/backend/package.json ./apps/backend/
 COPY apps/web/package.json ./apps/web/
@@ -27,7 +31,6 @@ RUN adduser -S nestjs -u 1001
 
 COPY --from=builder --chown=nestjs:nodejs /app/apps/backend/dist ./dist
 COPY --from=builder --chown=nestjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nestjs:nodejs /app/apps/backend/node_modules ./apps/backend/node_modules
 
 USER nestjs
 EXPOSE 8080
