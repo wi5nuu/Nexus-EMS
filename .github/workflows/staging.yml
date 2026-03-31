@@ -1,0 +1,90 @@
+name: Deploy to Staging
+
+on:
+  push:
+    branches:
+      - develop
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and Push Backend API (Fastify)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/backend/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:staging-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and Push Web Frontend (Next.js)
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: apps/web/Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-web:staging-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Configure Kubernetes Context
+        uses: azure/k8s-set-context@v3
+        with:
+          kubeconfig: ${{ secrets.KUBECONFIG_STAGING }}
+
+      - name: Run Database Migrations Job
+        run: |
+          helm upgrade --install api-migrations ./helm/migrations \
+            --set image.tag=staging-${{ github.sha }} \
+            --namespace nexus-staging \
+            --wait
+
+      - name: Deploy to Kubernetes Staging (Helm Upgrade)
+        run: |
+          helm upgrade --install nexus-ems ./helm/nexus-ems \
+            --set backend.image.tag=staging-${{ github.sha }} \
+            --set frontend.image.tag=staging-${{ github.sha }} \
+            --namespace nexus-staging \
+            --wait
+
+      - name: Wait for Pods Ready
+        run: kubectl rollout status deployment/nexus-api -n nexus-staging --timeout=120s
+
+      - name: ZAP Baseline Scan (DAST)
+        uses: zaproxy/action-baseline@v0.11.0
+        with:
+          target: 'https://staging.nexus-ems.internal'
+
+      - name: Slack Notification
+        if: always()
+        uses: slackapi/slack-github-action@v1.25.0
+        with:
+          payload: |
+            {
+              "text": "Staging Deployment ${{ job.status }}: <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View Run>"
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_STAGING }}

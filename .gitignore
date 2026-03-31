@@ -1,0 +1,39 @@
+# Root-level .gitignore — proteksi semua .env di seluruh monorepo
+
+# ===== NODE =====
+node_modules/
+dist/
+build/
+.next/
+/out/
+
+# ===== ENV FILES (JANGAN PERNAH DI-COMMIT!) =====
+.env
+.env.*
+!.env.example
+
+# ===== DATABASE =====
+*.sqlite
+*.db
+
+# ===== LOGS =====
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+logs/
+
+# ===== OS =====
+.DS_Store
+Thumbs.db
+
+# ===== IDE =====
+.vscode/settings.json
+.idea/
+*.pem
+
+# ===== BUILD / CACHE =====
+.turbo/
+*.tsbuildinfo
+next-env.d.ts
+.vercel/

@@ -1,0 +1,11 @@
+p, superadmin, /*, (GET)|(POST)|(PUT)|(PATCH)|(DELETE)
+p, projectmanager, /api/v1/projects/*, (GET)|(POST)|(PUT)|(PATCH)
+p, projectmanager, /api/v1/tickets/*, (GET)|(POST)|(PUT)|(PATCH)
+p, projectmanager, /api/v1/tasks/*, (GET)|(POST)|(PUT)|(PATCH)
+p, regularuser, /api/v1/tickets/*, (GET)|(POST)
+p, regularuser, /api/v1/tasks/*, (GET)
+p, regularuser, /api/v1/users/me, (GET)|(PATCH)
+
+g, admin@nexus.co, superadmin
+g, manager@nexus.co, projectmanager
+g, user@nexus.co, regularuser

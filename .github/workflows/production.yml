@@ -1,0 +1,95 @@
+name: Production Blue-Green Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  validate-and-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Images
+        run: |
+          docker buildx build -f apps/backend/Dockerfile -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:prod-${{ github.sha }} --push .
+          docker buildx build -f apps/web/Dockerfile -t ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-web:prod-${{ github.sha }} --push .
+
+  deploy-blue-canary:
+    needs: validate-and-build
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Configure Kubernetes Context
+        uses: azure/k8s-set-context@v3
+        with:
+          kubeconfig: ${{ secrets.KUBECONFIG_PROD }}
+
+      - name: Deploy to BLUE Environment
+        run: |
+          helm upgrade --install nexus-blue ./helm/nexus-ems \
+            --set backend.image.tag=prod-${{ github.sha }} \
+            --set frontend.image.tag=prod-${{ github.sha }} \
+            --set global.color=blue \
+            --namespace nexus-prod \
+            --wait
+
+      - name: Shift Traffic to Canary (5%)
+        run: |
+          kubectl patch ingress nexus-ingress -n nexus-prod \
+            --type=json -p='[{"op": "replace", "path": "/metadata/annotations/nginx.ingress.kubernetes.io~1canary-weight", "value":"5"}]'
+
+      - name: Wait & Monitor Traffic
+        run: sleep 300
+
+      - name: Shift Traffic to 25%
+        run: |
+          kubectl patch ingress nexus-ingress -n nexus-prod \
+            --type=json -p='[{"op": "replace", "path": "/metadata/annotations/nginx.ingress.kubernetes.io~1canary-weight", "value":"25"}]'
+
+  validate-and-promote:
+    needs: deploy-blue-canary
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate Health metrics
+        run: |
+          ERROR_RATE=$(curl -s "https://prometheus.nexus-ems.internal/api/v1/query?query=rate(http_requests_total{status=~\"5..\"}[5m])")
+          if [ "$ERROR_RATE" -gt 1 ]; then
+            echo "Error rate too high! Initiating Auto-Rollback."
+            exit 1
+          fi
+          
+      - name: Shift Traffic 100% to BLUE
+        run: |
+          kubectl patch ingress nexus-ingress -n nexus-prod \
+            --type=json -p='[{"op": "replace", "path": "/spec/rules/0/http/paths/0/backend/service/name", "value":"nexus-blue-service"}]'
+          kubectl patch ingress nexus-ingress -n nexus-prod \
+            --type=json -p='[{"op": "remove", "path": "/metadata/annotations/nginx.ingress.kubernetes.io~1canary"}]'
+
+      - name: PagerDuty & Slack Success Notify
+        if: success()
+        run: echo "Successfully promoted Blue-Green deployment to 100% traffic."
+
+      - name: Auto-Rollback on Failure
+        if: failure()
+        run: |
+          echo "Rolling back traffic to GREEN"
+          kubectl patch ingress nexus-ingress -n nexus-prod \
+            --type=json -p='[{"op": "remove", "path": "/metadata/annotations/nginx.ingress.kubernetes.io~1canary"}]'

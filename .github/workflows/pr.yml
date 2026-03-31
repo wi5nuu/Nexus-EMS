@@ -1,0 +1,102 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+
+jobs:
+  validate:
+    name: Lint, Test, and Build
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: root
+          POSTGRES_PASSWORD: rootpassword
+          POSTGRES_DB: nexus_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 8
+          run_install: false
+
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install Dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript Type Check
+        run: |
+          cd apps/backend && pnpm tsc --noEmit
+          cd ../web && pnpm tsc --noEmit
+
+      - name: ESLint & Prettier
+        run: pnpm lint
+
+      - name: Run Prisma Generate
+        run: cd apps/backend && pnpm prisma generate
+
+      - name: Apply Test DB Migrations
+        env:
+          DATABASE_URL: "postgresql://root:rootpassword@localhost:5432/nexus_test_db"
+        run: cd apps/backend && pnpm prisma migrate dev --name init_test
+
+      - name: Unit & Integration Tests (Vitest)
+        env:
+          DATABASE_URL: "postgresql://root:rootpassword@localhost:5432/nexus_test_db"
+          REDIS_URL: "redis://localhost:6379"
+        run: cd apps/backend && pnpm vitest run --coverage
+
+      - name: Build Next.js & Check Bundle Size
+        run: |
+          cd apps/web && pnpm build
+
+      - name: SAST Scan (Semgrep)
+        uses: returntocorp/semgrep-action@v1
+        with:
+          config: "p/default"
+
+      - name: License Compliance Check
+        run: npx license-checker --summary
