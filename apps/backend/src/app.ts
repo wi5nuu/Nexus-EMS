@@ -96,7 +96,17 @@ async function bootstrap() {
 
 
 
-    // 6. Health Check
+    // 6. Home Route
+    fastify.get('/', async () => {
+      return { 
+        name: 'Nexus EMS API', 
+        status: 'LIVE', 
+        docs: '/docs', 
+        health: '/health' 
+      };
+    });
+
+    // 7. Health Check
     fastify.get('/health', async () => {
       return { status: 'OK', timestamp: new Date().toISOString() };
     });
