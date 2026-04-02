@@ -20,6 +20,9 @@ RUN npx prisma generate --schema=apps/backend/prisma/schema.prisma
 # Build the backend
 RUN npm run build -w apps/backend
 
+# Copy non-TS files (Casbin configuration) to dist
+RUN mkdir -p apps/backend/dist/shared/rbac && cp apps/backend/src/shared/rbac/* apps/backend/dist/shared/rbac/
+
 # Production stage
 FROM node:20-alpine
 
