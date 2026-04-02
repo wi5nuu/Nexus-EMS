@@ -5,12 +5,12 @@ export function getAccessToken(): string | null {
 
 export interface User {
   id: string;
-  name: string;
   email: string;
-  firstName?: string;
-  lastName?: string;
-  role?: string;
+  firstName: string;
+  lastName: string;
+  organization_id: string;
   avatar?: string;
+  role?: string;
 }
 
 export function getUser(): User | null {

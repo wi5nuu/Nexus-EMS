@@ -163,7 +163,9 @@ export default function DashboardLayout({
                 <Button variant="ghost" className="h-7 p-0 px-1.5 flex items-center gap-1.5 hover:bg-bg-elevated transition-fast">
                   <Avatar className="h-5 w-5 border border-border-default">
                     <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`} />
-                    <AvatarFallback className="text-[9px]">JD</AvatarFallback>
+                    <AvatarFallback className="text-[9px]">
+                      {user ? `${user.firstName[0]}${user.lastName[0]}` : "JD"}
+                    </AvatarFallback>
                   </Avatar>
                   <ChevronDown className="h-2.5 w-2.5 text-text-tertiary hidden sm:block" />
                 </Button>
@@ -297,7 +299,7 @@ export default function DashboardLayout({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[11px] font-semibold text-text-primary truncate">
-                    {user?.name || "Wisnu Dev"}
+                    {user ? `${user.firstName} ${user.lastName}` : "Wisnu Dev"}
                   </p>
                   <p className="text-[9px] text-text-tertiary truncate">
                     {user?.email || "admin@nexus.co"}

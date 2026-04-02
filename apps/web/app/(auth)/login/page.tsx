@@ -21,14 +21,23 @@ export default function LoginPage() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    const fullUrl = `${API_URL}/api/v1/auth/login`;
+    console.log(`[Auth] Attempting login at: ${fullUrl}`);
     setLoading(true);
 
     try {
-      const res = await fetch(`${API_URL}/api/v1/auth/login`, {
+      const res = await fetch(fullUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
+
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await res.text();
+        console.error(`[Auth] Expected JSON but received: ${contentType}`, text.slice(0, 200));
+        throw new Error(`Server returned HTML instead of JSON. Please check your NEXT_PUBLIC_API_URL setting in Vercel.`);
+      }
 
       const data = await res.json();
 
@@ -183,9 +192,21 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          {/* Demo credentials */}
           <div className="mt-5 pt-5 border-t border-border-subtle">
-            <div className="flex items-center gap-2 justify-center">
+            <p className="text-center text-[12px] font-medium text-text-tertiary">
+              Don't have an account?{" "}
+              <button
+                type="button"
+                onClick={() => router.push("/register")}
+                className="text-brand-text hover:text-brand-hover font-bold transition-fast"
+              >
+                Create one
+              </button>
+            </p>
+          </div>
+
+          {/* Demo credentials */}
+          <div className="mt-4 flex items-center gap-2 justify-center">
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
               <p className="text-[11px] font-mono text-text-tertiary text-center">
                 Demo: <span className="text-brand-text font-bold">admin@nexus.co</span>{" "}
@@ -194,12 +215,11 @@ export default function LoginPage() {
               </p>
             </div>
           </div>
-        </div>
 
-        <p className="text-center mt-6 text-[10px] font-mono text-text-tertiary opacity-40 uppercase tracking-widest">
-          Nexus Corp © 2026 · Internal Engineering Platform
-        </p>
+          <p className="text-center mt-6 text-[10px] font-mono text-text-tertiary opacity-40 uppercase tracking-widest">
+            Nexus Corp © 2026 · Internal Engineering Platform
+          </p>
+        </div>
       </div>
-    </div>
   );
 }

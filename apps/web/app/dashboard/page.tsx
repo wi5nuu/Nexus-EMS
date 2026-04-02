@@ -15,6 +15,8 @@ import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { apiFetch, getUser } from "@/lib/auth";
 
 const translations = {
   en: {
@@ -55,6 +57,19 @@ export default function DashboardPage() {
   const t = translations[lang as keyof typeof translations] || translations.en;
   const [mounted, setMounted] = useState(false);
 
+  const user = getUser();
+  const userName = user ? `${user.firstName} ${user.lastName}` : "Wisnu";
+
+  const { data: kpis, isLoading: isKpisLoading } = useQuery({
+    queryKey: ["dashboard-kpis"],
+    queryFn: () => apiFetch<{ totalUsers: number; openTickets: number; totalProjects: number; activeSprints: number }>("/api/v1/analytics/kpis"),
+  });
+
+  const { data: insights, isLoading: isInsightsLoading } = useQuery({
+    queryKey: ["dashboard-insights"],
+    queryFn: () => apiFetch<{ recentTickets: any[]; averageTicketResolutionTime: string; slaCompliance: string }>("/api/v1/analytics/insights"),
+  });
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -67,7 +82,7 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="font-syne font-bold text-2xl text-text-primary tracking-tight">
-            {t.greeting}
+            {lang === "id" ? `Selamat pagi, ${userName} 👋` : `Good morning, ${userName} 👋`}
           </h1>
           <div className="flex items-center gap-2 mt-1.5 font-dmsans text-[13px] text-text-tertiary">
             <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-brand-default/10 text-brand-text font-bold text-[10px] tracking-widest border border-brand-default/20">
@@ -94,25 +109,25 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
         <MetricCard 
           label={t.metrics.scale} 
-          value={1280} 
+          value={(isKpisLoading ? "—" : (kpis?.totalUsers ?? 0)) as string | number} 
           trend={12.5}
           status="normal"
         />
         <MetricCard 
           label={t.metrics.open} 
-          value={42} 
+          value={(isKpisLoading ? "—" : (kpis?.openTickets ?? 0)) as string | number} 
           trend={-10}
           status="warning"
         />
         <MetricCard 
           label={t.metrics.sla} 
-          value="99.4%" 
+          value={(isInsightsLoading ? "—" : (insights?.slaCompliance || "99.4%")) as string | number} 
           trend={0.2}
           status="success"
         />
         <MetricCard 
           label={t.metrics.velo} 
-          value={156} 
+          value={(isKpisLoading ? "—" : (kpis?.totalProjects ?? 0)) as string | number} 
           trend={18}
           status="normal"
         />
@@ -177,25 +192,31 @@ export default function DashboardPage() {
               <MoreHorizontal className="h-4 w-4 text-text-tertiary" />
             </div>
             <div className="space-y-4">
-              {[
-                { label: "Frontend Optimization", code: "NEX-241", status: "In Progress", color: "text-brand-text" },
-                { label: "Auth Middleware Refactor", code: "NEX-198", status: "Blocker", color: "text-crimson-500" },
-                { label: "Design System Tokens", code: "NEX-205", status: "Review", color: "text-amber-500" },
-                { label: "Prisma Schema Update", code: "NEX-214", status: "Done", color: "text-emerald-500" },
-              ].map((task) => (
-                <div key={task.code} className="flex items-center justify-between group cursor-pointer">
-                  <div className="flex items-center gap-3">
-                    <div className="h-8 w-8 rounded-lg bg-bg-sunken border border-border-subtle flex items-center justify-center shrink-0 group-hover:border-brand-default transition-fast">
-                      <Layers className="h-4 w-4 text-text-tertiary group-hover:text-brand-text" />
+              {isInsightsLoading ? (
+                <p className="text-xs text-text-tertiary">Loading tasks...</p>
+              ) : insights?.recentTickets?.length ? (
+                insights.recentTickets.map((ticket: any) => (
+                  <div key={ticket.id} className="flex items-center justify-between group cursor-pointer" onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}>
+                    <div className="flex items-center gap-3">
+                      <div className="h-8 w-8 rounded-lg bg-bg-sunken border border-border-subtle flex items-center justify-center shrink-0 group-hover:border-brand-default transition-fast">
+                        <Layers className="h-4 w-4 text-text-tertiary group-hover:text-brand-text" />
+                      </div>
+                      <div>
+                        <p className="text-[13px] font-bold text-text-primary group-hover:text-brand-text transition-fast leading-none mb-1">{ticket.title}</p>
+                        <p className="text-[10px] font-mono font-bold text-text-tertiary uppercase tracking-widest">{ticket.id.slice(0, 8)}</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-[13px] font-bold text-text-primary group-hover:text-brand-text transition-fast leading-none mb-1">{task.label}</p>
-                      <p className="text-[10px] font-mono font-bold text-text-tertiary uppercase tracking-widest">{task.code}</p>
-                    </div>
+                    <span className={cn(
+                      "text-[10px] font-bold uppercase tracking-wider", 
+                      ticket.priority === 'CRITICAL' ? 'text-crimson-500' : 'text-brand-text'
+                    )}>
+                      {ticket.status}
+                    </span>
                   </div>
-                  <span className={cn("text-[10px] font-bold uppercase tracking-wider", task.color)}>{task.status}</span>
-                </div>
-              ))}
+                ))
+              ) : (
+                <p className="text-xs text-text-tertiary">No recent tasks</p>
+              )}
             </div>
             <Button variant="ghost" className="w-full mt-6 h-9 text-[11px] font-bold text-text-tertiary hover:text-brand-text hover:bg-brand-default/5 transition-fast">
               {t.tasks.viewAll}

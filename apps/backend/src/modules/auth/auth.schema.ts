@@ -5,6 +5,14 @@ export const loginSchema = z.object({
   password: z.string().min(8),
 });
 
+export const registerSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(8).regex(/[a-zA-Z]/).regex(/[0-9]/),
+  firstName: z.string().min(2),
+  lastName: z.string().min(2),
+  organizationName: z.string().optional(),
+});
+
 export const mfaVerifySchema = z.object({
   code: z.string().length(6),
 });

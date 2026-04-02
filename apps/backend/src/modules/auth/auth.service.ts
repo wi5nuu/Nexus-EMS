@@ -5,6 +5,45 @@ import { LoginInput, UpdateProfileInput } from './auth.schema';
 const prisma = new PrismaClient();
 
 export class AuthService {
+  async registerUser(input: any) {
+    const existingUser = await prisma.user.findUnique({
+      where: { email: input.email },
+    });
+
+    if (existingUser) {
+      throw new Error('User already exists');
+    }
+
+    const passwordHash = await argon2.hash(input.password);
+
+    // Create Organization and User in a transaction
+    return prisma.$transaction(async (tx) => {
+      const orgName = input.organizationName || `${input.firstName}'s Org`;
+      const orgSlug = `${orgName.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 1000)}`;
+      
+      const org = await tx.organization.create({
+        data: {
+          name: orgName,
+          slug: orgSlug,
+        }
+      });
+
+      const user = await tx.user.create({
+        data: {
+          email: input.email,
+          passwordHash,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          organizationId: org.id,
+          status: 'ACTIVE',
+        },
+        include: { organization: true },
+      });
+
+      return user;
+    });
+  }
+
   async validateUser(input: LoginInput) {
     const user = await prisma.user.findUnique({
       where: { email: input.email },

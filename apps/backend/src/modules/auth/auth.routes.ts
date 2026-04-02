@@ -1,12 +1,55 @@
 import { FastifyInstance } from 'fastify';
 import { ZodTypeProvider } from 'fastify-type-provider-zod';
-import { loginSchema, authResponseSchema, updateProfileSchema } from './auth.schema';
+import { loginSchema, registerSchema, authResponseSchema, updateProfileSchema } from './auth.schema';
 import { AuthService } from './auth.service';
 
 const authService = new AuthService();
 
 export async function authRoutes(fastify: FastifyInstance) {
   const server = fastify.withTypeProvider<ZodTypeProvider>();
+
+  server.post('/register', {
+    schema: {
+      body: registerSchema,
+      response: {
+        200: authResponseSchema,
+      },
+    },
+    handler: async (request, reply) => {
+      const input = request.body as any;
+      try {
+        const user = await authService.registerUser(input);
+        
+        const accessToken = fastify.jwt.sign({
+          sub: user.id,
+          orgId: user.organizationId,
+          roles: ['USER'], 
+        }, { expiresIn: '15m' });
+
+        const refreshToken = fastify.jwt.sign({
+          sub: user.id,
+        }, { expiresIn: '7d' });
+
+        return {
+          user: {
+            id: user.id,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            organization_id: user.organizationId,
+          },
+          accessToken,
+          refreshToken,
+        };
+      } catch (error: any) {
+        return reply.status(400).send({
+          error: 'Bad Request',
+          message: error.message,
+          statusCode: 400,
+        });
+      }
+    },
+  });
 
   server.post('/login', {
     schema: {
