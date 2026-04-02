@@ -127,4 +127,130 @@ export class HRService {
       take: 30,
     });
   }
+
+  /**
+   * Employee Directory & Management
+   */
+  async listEmployees(organizationId: string) {
+    return prisma.user.findMany({
+      where: {
+        organizationId,
+        deletedAt: null,
+      },
+      include: {
+        employeeProfile: {
+          include: {
+            department: true,
+            team: true,
+          }
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  async listTeams(organizationId: string) {
+    return prisma.team.findMany({
+      where: {
+        department: {
+          organizationId,
+        },
+      },
+      include: {
+        department: true,
+        _count: {
+          select: { employees: true }
+        }
+      }
+    });
+  }
+
+  async listTeamMembers(teamId: string) {
+    return prisma.employeeProfile.findMany({
+      where: { teamId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            status: true,
+          }
+        },
+        department: true,
+      }
+    });
+  }
+
+  async updateEmployee(userId: string, data: { status?: string; jobTitle?: string; departmentId?: string; teamId?: string }) {
+    return prisma.$transaction(async (tx) => {
+      // 1. Update User status if provided
+      if (data.status) {
+        await tx.user.update({
+          where: { id: userId },
+          data: { status: data.status as any },
+        });
+      }
+
+      // 2. Update Employee Profile
+      const profileData: any = {};
+      if (data.jobTitle) profileData.jobTitle = data.jobTitle;
+      if (data.departmentId) profileData.departmentId = data.departmentId;
+      if (data.teamId !== undefined) profileData.teamId = data.teamId;
+
+      const profile = await tx.employeeProfile.update({
+        where: { userId },
+        data: profileData,
+        include: {
+          department: true,
+          team: true,
+        }
+      });
+
+      return profile;
+    });
+  }
+
+  async getEmployeeById(userId: string) {
+    return prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        employeeProfile: {
+          include: {
+            department: true,
+            team: true,
+          }
+        },
+      },
+    });
+  }
+
+  async createEmployee(organizationId: string, data: { email: string; firstName: string; lastName: string; jobTitle: string; departmentId?: string; teamId?: string }) {
+    return prisma.$transaction(async (tx) => {
+      // 1. Create the base User
+      const user = await tx.user.create({
+        data: {
+          organizationId,
+          email: data.email,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          status: 'ACTIVE',
+        }
+      });
+
+      // 2. Create the Employee Profile
+      const profile = await tx.employeeProfile.create({
+        data: {
+          userId: user.id,
+          jobTitle: data.jobTitle,
+          departmentId: data.departmentId,
+          teamId: data.teamId,
+          joinDate: new Date(),
+        }
+      });
+
+      return { ...user, employeeProfile: profile };
+    });
+  }
 }

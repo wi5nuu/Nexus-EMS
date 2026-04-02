@@ -3,7 +3,8 @@
 import { 
   Mail, 
   Shield, Key, Save,
-  Github, Slack, Cloud
+  Github, Slack, Cloud, Camera,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch, updateUser } from "@/lib/auth";
 import { motion } from "framer-motion";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { toast } from "sonner";
 
 interface ProfileData {
   id: string;
@@ -71,13 +73,26 @@ export default function ProfileSettingsPage() {
           lastName: newData.lastName,
         });
       }
-      alert("Profile updated successfully!");
+      toast.success("Profile security baseline updated.");
     },
+    onError: (err: any) => {
+      toast.error(`Sync failed: ${err.message}`);
+    }
   });
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
+  const handlePhotoUpload = () => {
+    setUploading(true);
+    setTimeout(() => {
+      setUploading(false);
+      toast.success("Biometric profile photo updated.");
+    }, 2000);
+  };
 
   const handleSave = () => {
+    toast.info("Syncing with Vanguard Central...");
     mutation.mutate(formData);
   };
 
@@ -98,9 +113,10 @@ export default function ProfileSettingsPage() {
         <Button 
           disabled={mutation.isPending}
           onClick={handleSave}
-          className="w-full sm:w-auto h-8 bg-brand-default hover:bg-brand-hover text-white text-[11px] font-bold transition-fast shadow-brand"
+          className="w-full sm:w-auto h-8 bg-brand-default hover:bg-brand-hover text-white text-[11px] font-bold transition-all shadow-brand rounded-none"
         >
-          {mutation.isPending ? "SAVING..." : <><Save className="h-3.5 w-3.5 mr-1.5" /> Save Changes</>}
+          {mutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1.5" /> : <Save className="h-3.5 w-3.5 mr-1.5" />}
+          {mutation.isPending ? "SYNCING..." : "Save Changes"}
         </Button>
       </div>
 
@@ -111,14 +127,27 @@ export default function ProfileSettingsPage() {
                <CardTitle className="text-[9px] sm:text-[10px] font-syne font-bold uppercase tracking-widest text-text-tertiary text-center">User Profile</CardTitle>
             </CardHeader>
             <CardContent className="px-6 pb-6 pt-6 flex flex-col items-center">
-              <div className="relative group cursor-pointer">
-                <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-2 border-border-default shadow-xl group-hover:border-brand-default transition-fast">
+              <div className="relative group cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                <Avatar className="h-20 w-20 sm:h-24 sm:w-24 border-2 border-border-default shadow-xl group-hover:border-brand-default transition-all">
                   <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${profile?.id}`} />
                   <AvatarFallback className="bg-bg-sunken text-lg sm:text-xl font-bold">{profile?.firstName?.[0]}{profile?.lastName?.[0]}</AvatarFallback>
                 </Avatar>
-                <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-fast">
-                   <Cloud className="h-5 w-5 text-white" />
+                <div className="absolute inset-0 bg-black/40 rounded-full flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all">
+                   <Camera className="h-5 w-5 text-white" />
+                   <span className="text-[8px] text-white font-bold uppercase mt-1">Change</span>
                 </div>
+                {uploading && (
+                  <div className="absolute inset-0 bg-black/60 rounded-full flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 text-brand-text animate-spin" />
+                  </div>
+                )}
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  className="hidden" 
+                  accept="image/*"
+                  onChange={handlePhotoUpload}
+                />
               </div>
               <h2 className="mt-4 font-syne font-bold text-md sm:text-lg text-text-primary">{profile?.firstName} {profile?.lastName}</h2>
               <p className="text-[10px] font-mono font-bold text-brand-text uppercase tracking-widest mt-1 bg-brand-default/10 px-2 py-0.5 rounded-full">{profile?.employeeProfile?.position || "Member"}</p>

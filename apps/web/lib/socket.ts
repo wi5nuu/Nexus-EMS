@@ -13,7 +13,7 @@ export const getSocket = (): Socket => {
     });
 
     socket.on('connect', () => {
-      console.log('Connected to Nexus Real-Time Events', socket?.id);
+      console.log('Connected to Vanguard Real-Time Events', socket?.id);
     });
 
     socket.on('disconnect', () => {

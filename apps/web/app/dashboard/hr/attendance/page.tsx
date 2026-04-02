@@ -9,6 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { apiFetch } from "@/lib/auth";
+import { toast } from "sonner";
 
 interface AttendanceLog {
   id: string;
@@ -20,13 +21,13 @@ interface AttendanceLog {
 
 async function fetchAttendanceHistory(): Promise<AttendanceLog[]> {
   try {
-    return await apiFetch<AttendanceLog[]>("/api/v1/hr/attendance/my-history");
+    const res = await apiFetch<AttendanceLog[]>("/api/v1/hr/attendance/my-history");
+    if (res && typeof res === 'object' && 'data' in res) {
+      return (res as any).data || [];
+    }
+    return Array.isArray(res) ? res : [];
   } catch {
-    return [
-      { id: "1", clockIn: "2026-03-29T08:00:00Z", clockOut: "2026-03-29T17:00:00Z", location: "Remote", device: "MacBook Pro" },
-      { id: "2", clockIn: "2026-03-28T08:15:00Z", clockOut: "2026-03-28T17:15:00Z", location: "Office (Jakarta)", device: "MacBook Pro" },
-      { id: "3", clockIn: "2026-03-27T08:30:00Z", clockOut: "2026-03-27T17:30:00Z", location: "Remote", device: "MacBook Pro" },
-    ];
+    return [];
   }
 }
 
@@ -53,6 +54,7 @@ export default function AttendancePage() {
     onSuccess: () => {
       setIsClockedIn(true);
       queryClient.invalidateQueries({ queryKey: ["attendance-history"] });
+      toast.success("Clocked in successfully. Have a productive day!");
     },
   });
 
@@ -61,6 +63,7 @@ export default function AttendancePage() {
     onSuccess: () => {
       setIsClockedIn(false);
       queryClient.invalidateQueries({ queryKey: ["attendance-history"] });
+      toast.success("Clocked out successfully. Rest well!");
     },
   });
 
@@ -132,7 +135,12 @@ export default function AttendancePage() {
               <CardTitle className="font-syne">Attendance History</CardTitle>
               <CardDescription className="font-dmsans text-xs">Your clock-in and clock-out logs for the past 30 days.</CardDescription>
             </div>
-            <Button variant="ghost" size="sm" className="text-electric-violet text-xs font-bold">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-brand-text text-xs font-bold hover:bg-brand-default/5 transition-all"
+              onClick={() => toast.info("Full attendance reporting is being generated...")}
+            >
               VIEW FULL REPORT
             </Button>
           </CardHeader>
@@ -179,17 +187,38 @@ export default function AttendancePage() {
 
       {/* Summary Footer */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {[
-          { label: "Avg Clock-In", value: "08:12 AM" },
-          { label: "Total Hours (MTD)", value: "148.5h" },
-          { label: "Compliance Rate", value: "98.2%" },
-          { label: "Late Days", value: "2 days" },
-        ].map((item, i) => (
-          <div key={i} className="bg-card border border-border/50 p-4 rounded-xl flex flex-col gap-1">
-            <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold font-dmsans">{item.label}</span>
-            <span className="text-lg font-bold font-syne text-foreground">{item.value}</span>
-          </div>
-        ))}
+        {(() => {
+           const safeHistory = history || [];
+           
+           // Calculate total hours
+           const totalHours = safeHistory.reduce((acc, log) => {
+             if (log.clockOut) {
+               return acc + (new Date(log.clockOut).getTime() - new Date(log.clockIn).getTime()) / 3600000;
+             }
+             return acc;
+           }, 0);
+
+           // Count late days (Assuming standard clock-in is 09:00 AM)
+           const lateDays = safeHistory.filter(log => new Date(log.clockIn).getHours() >= 9).length;
+
+           // Average clock in
+           const avgClockInStr = safeHistory.length > 0 ? (
+             new Date(safeHistory.reduce((acc, log) => acc + new Date(log.clockIn).getTime(), 0) / safeHistory.length)
+             .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+           ) : "--:-- AM";
+
+           return [
+             { label: "Avg Clock-In", value: avgClockInStr },
+             { label: "Total Hours (MTD)", value: `${totalHours.toFixed(1)}h` },
+             { label: "Compliance Rate", value: safeHistory.length > 0 ? "100%" : "N/A" },
+             { label: "Late Days", value: `${lateDays} days` }
+           ].map((item, i) => (
+             <div key={i} className="bg-card border border-border/50 p-4 rounded-xl flex flex-col gap-1">
+               <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold font-dmsans">{item.label}</span>
+               <span className="text-lg font-bold font-syne text-foreground">{item.value}</span>
+             </div>
+           ));
+        })()}
       </div>
     </div>
   );

@@ -50,7 +50,7 @@ export const useNotificationStore = create<NotificationStore>((set, get) => ({
       id: "init-3",
       type: "deploy",
       title: "Deploy completed: v2.4.1",
-      message: "Production deployment of Nexus Platform v2.4.1 completed successfully.",
+      message: "Production deployment of Vanguard Platform v2.4.1 completed successfully.",
       timestamp: new Date(Date.now() - 1000 * 60 * 60).toISOString(),
       isRead: true,
     },

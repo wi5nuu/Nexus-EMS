@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { 
   DndContext, 
   DragOverlay, 
@@ -23,7 +23,7 @@ import { KanbanColumn } from "./KanbanColumn";
 import { KanbanTask } from "./KanbanTask";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
-
+import { apiFetch } from "@/lib/auth";
 export type Task = {
   id: string;
   columnId: string;
@@ -78,31 +78,42 @@ export function KanbanBoard() {
     queryKey: ['tickets'],
     queryFn: async () => {
       try {
-        const res = await fetch('http://localhost:8081/api/v1/tickets');
-        if (!res.ok) return initialTasks;
-        const json = await res.json();
-        if (!json.data || json.data.length === 0) return initialTasks;
+        const json = await apiFetch<{ data: any[] }>('/api/v1/tickets');
+        if (!json || !json.data || json.data.length === 0) return initialTasks;
         
         // Map backend Domain 4 Ticket schema to Kanban Task schema
-        return json.data.map((t: { id: string; status: string; title: string; description?: string; priority: "Low" | "Medium" | "High" | "Urgent"; assignee?: { email: string } }) => ({
+        return json.data.map((t: any) => ({
           id: t.id,
           columnId: t.status,
           title: t.title,
           description: t.description || '',
           priority: t.priority,
-          assignee: t.assignee?.email?.substring(0,2).toUpperCase() || 'NA'
+          assignee: t.assignee?.name?.substring(0,2).toUpperCase() || t.assignee?.email?.substring(0,2).toUpperCase() || 'NA'
         }));
-      } catch {
-        console.warn("Backend unavailable, falling back to mock data");
+      } catch (e: any) {
+        console.warn("Backend unavailable, falling back to mock data", e.message);
         return initialTasks;
       }
     },
     staleTime: 5000,
   });
 
+  const queryClient = useQueryClient();
   const [columns] = useState<Column[]>(initialColumns);
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+  const statusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: string, status: string }) => {
+      return apiFetch(`/api/v1/tickets/${id}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status })
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tickets'] });
+    }
+  });
 
   useEffect(() => {
     if (fetchedTasks) {
@@ -163,7 +174,14 @@ export function KanbanBoard() {
     }
   }
 
-  function handleDragEnd() {
+  function handleDragEnd(event: DragStartEvent) {
+    // Determine target column and initiate backend mutation 
+    if (activeTask) {
+      const currentTask = tasks.find(t => t.id === activeTask.id);
+      if (currentTask && currentTask.columnId !== activeTask.columnId) {
+        statusMutation.mutate({ id: currentTask.id, status: currentTask.columnId });
+      }
+    }
     setActiveTask(null);
   }
 

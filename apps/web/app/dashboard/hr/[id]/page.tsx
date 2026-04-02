@@ -1,44 +1,137 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiFetch } from "@/lib/auth";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { 
   ArrowLeft, Mail, MapPin, 
   Briefcase, Star, 
   Edit3, UserX,
   Award, ShieldCheck,
-  History as HistoryIcon
+  History as HistoryIcon,
+  Users,
+  Check,
+  AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export default function EmployeeProfilePage() {
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const router = useRouter();
   const params = useParams();
+  const queryClient = useQueryClient();
   const id = params.id as string;
 
-  interface EmployeeProfile {
-    name: string;
-    email: string;
-    role: string;
-    dept: string;
-    level: string;
-    status: string;
-    joined: string;
-  }
+  const { data: employeeData, isLoading: isEmpLoading } = useQuery({
+    queryKey: ['employee', id],
+    queryFn: () => apiFetch<{data: any}>(`/api/v1/hr/employees/${id}`),
+  });
 
-  // Mock data fetching based on ID
-  const employees: Record<string, EmployeeProfile> = {
-    "1": { name: "Arif Kurniawan", email: "arif@nexus.co", role: "Principal Engineer", dept: "Engineering", level: "Senior", status: "Active", joined: "Mar 2023" },
-    "2": { name: "Rania Santoso", email: "rania@nexus.co", role: "Product Manager", dept: "Product", level: "Lead", status: "On Leave", joined: "Jul 2022" },
-    "3": { name: "Damar Haryanto", email: "damar@nexus.co", role: "DevOps Engineer", dept: "Infrastructure", level: "Mid", status: "Active", joined: "Sep 2023" },
-    "4": { name: "Putri Andriani", email: "putri@nexus.co", role: "Frontend Engineer", dept: "Engineering", level: "Junior", status: "Active", joined: "Jan 2024" },
-    "5": { name: "Budi Mahendra", email: "budi@nexus.co", role: "QA Engineer", dept: "Quality", level: "Mid", status: "Active", joined: "Jun 2023" },
-    "6": { name: "Sari Wijaya", email: "sari@nexus.co", role: "HR Manager", dept: "Human Resources", level: "Senior", status: "Active", joined: "Jan 2022" },
+  const empRaw = employeeData?.data;
+
+  // New: Fetch Departments for selection
+  const { data: deptsData } = useQuery({
+    queryKey: ['departments'],
+    queryFn: () => apiFetch<{data: any[]}>('/api/v1/organization/departments'),
+  });
+
+  // New: Fetch Teams for selection
+  const { data: teamsData } = useQuery({
+    queryKey: ['teams'],
+    queryFn: () => apiFetch<{data: any[]}>('/api/v1/hr/teams'),
+  });
+
+  // New: Fetch Team Members for the current employee's team
+  const teamId = empRaw?.employeeProfile?.teamId;
+  const { data: teamMembersData } = useQuery({
+    queryKey: ['team-members', teamId],
+    queryFn: () => apiFetch<{data: any[]}>(`/api/v1/hr/teams/${teamId}/members`),
+    enabled: !!teamId,
+  });
+
+  const [editData, setEditData] = useState({
+    firstName: "",
+    lastName: "",
+    jobTitle: "",
+    departmentId: "",
+    teamId: "",
+  });
+
+  useEffect(() => {
+    if (empRaw) {
+      setEditData({
+        firstName: empRaw.firstName || "",
+        lastName: empRaw.lastName || "",
+        jobTitle: empRaw.employeeProfile?.jobTitle || "",
+        departmentId: empRaw.employeeProfile?.departmentId || "",
+        teamId: empRaw.employeeProfile?.teamId || "none",
+      });
+    }
+  }, [empRaw, isEditOpen]);
+
+  const updateMutation = useMutation({
+    mutationFn: (data: any) => apiFetch(`/api/v1/hr/employees/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['employee', id] });
+      toast.success("Identity profile synchronized with central datastore.");
+      setIsEditOpen(false);
+    },
+    onError: (err: any) => toast.error(err.message),
+  });
+
+  const handleSaveEdit = () => {
+    updateMutation.mutate({
+      firstName: editData.firstName,
+      lastName: editData.lastName,
+      jobTitle: editData.jobTitle,
+      departmentId: editData.departmentId,
+      teamId: editData.teamId === "none" ? null : editData.teamId,
+    });
   };
 
-  const emp = employees[id] || employees["1"];
+  const departments = deptsData?.data || [];
+  const teams = teamsData?.data || [];
+  const teamMembers = teamMembersData?.data || [];
+
+  const filteredTeams = teams.filter(t => t.departmentId === editData.departmentId);
+  
+  if (isEmpLoading) {
+    return <div className="max-w-6xl mx-auto space-y-6 pt-10 text-center text-text-tertiary animate-pulse font-mono text-sm">Loading Neural Profile...</div>;
+  }
+
+  if (!empRaw) {
+    return <div className="max-w-6xl mx-auto space-y-6 pt-10 text-center text-crimson-500 font-syne font-bold">Employee Not Found.</div>;
+  }
+
+  const emp = {
+    id: empRaw.id,
+    name: `${empRaw.firstName} ${empRaw.lastName}`,
+    email: empRaw.email,
+    role: empRaw.employeeProfile?.jobTitle || 'Employee',
+    dept: empRaw.employeeProfile?.department?.name || 'General',
+    level: "Senior", // Default derivation
+    status: empRaw.status === 'ACTIVE' ? 'Active' : 'Deactivated',
+    joined: new Date(empRaw.employeeProfile?.joinDate || Date.now()).toLocaleDateString("en-US", { month: 'short', year: 'numeric' }),
+  };
+
   const initials = emp.name.split(" ").map((n: string) => n[0]).join("").toUpperCase();
 
   return (
@@ -64,10 +157,93 @@ export default function EmployeeProfilePage() {
            </div>
         </div>
         <div className="flex items-center gap-2 w-full sm:w-auto">
-           <Button variant="outline" className="flex-1 sm:flex-none h-8 border-border-default text-text-secondary hover:text-text-primary text-xs font-semibold bg-bg-surface hover:bg-bg-elevated transition-fast">
-              <Edit3 className="h-3.5 w-3.5 mr-2" /> Edit Profile
-           </Button>
-           <Button variant="outline" className="flex-1 sm:flex-none h-8 border-border-default text-crimson-500 hover:bg-crimson-500/5 text-xs font-semibold bg-bg-surface transition-fast">
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+              <DialogTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  className="flex-1 sm:flex-none h-8 border-border-default text-text-secondary hover:text-text-primary text-xs font-semibold bg-bg-surface hover:bg-bg-elevated transition-fast"
+                >
+                   <Edit3 className="h-3.5 w-3.5 mr-2" /> Edit Profile
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px] bg-bg-surface border-border-default shadow-2xl">
+                <DialogHeader>
+                  <DialogTitle className="font-syne text-text-primary text-xl font-bold">Edit System Profile</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">First Name</Label>
+                      <Input 
+                        value={editData.firstName} 
+                        onChange={(e) => setEditData({...editData, firstName: e.target.value})}
+                        className="h-9 bg-bg-sunken border-border-default text-text-primary text-[13px]" 
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                       <Label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Last Name</Label>
+                       <Input 
+                        value={editData.lastName} 
+                        onChange={(e) => setEditData({...editData, lastName: e.target.value})}
+                        className="h-9 bg-bg-sunken border-border-default text-text-primary text-[13px]" 
+                       />
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Operational Role</Label>
+                    <Input 
+                      value={editData.jobTitle} 
+                      onChange={(e) => setEditData({...editData, jobTitle: e.target.value})}
+                      className="h-9 bg-bg-sunken border-border-default text-text-primary text-[13px]" 
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Primary Department</Label>
+                    <Select value={editData.departmentId} onValueChange={(val) => setEditData({...editData, departmentId: val, teamId: "none" })}>
+                      <SelectTrigger className="h-9 bg-bg-sunken border-border-default">
+                        <SelectValue placeholder="Select Department" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-bg-surface border-border-default">
+                        {departments.map((d: any) => (
+                           <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Assigned Team</Label>
+                    <Select value={editData.teamId} onValueChange={(val) => setEditData({...editData, teamId: val})}>
+                      <SelectTrigger className="h-9 bg-bg-sunken border-border-default">
+                        <SelectValue placeholder="Select Team" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-bg-surface border-border-default">
+                        <SelectItem value="none">Independent Contributor</SelectItem>
+                        {filteredTeams.map((t: any) => (
+                           <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)} className="h-9 text-[11px] font-bold border-border-default">CANCEL</Button>
+                  <Button 
+                    type="button" 
+                    disabled={updateMutation.isPending}
+                    onClick={handleSaveEdit} 
+                    className="h-9 text-[11px] font-bold bg-brand-default text-white hover:bg-brand-hover shadow-brand"
+                  >
+                    {updateMutation.isPending ? <div className="h-3.5 w-3.5 animate-spin mr-2 border-2 border-white border-t-transparent rounded-full" /> : <Edit3 className="h-3.5 w-3.5 mr-2" />}
+                    SYNC PROFILE
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+           <Button 
+             variant="outline" 
+             className="flex-1 sm:flex-none h-8 border-border-default text-crimson-500 hover:bg-crimson-500/5 text-xs font-semibold bg-bg-surface transition-fast"
+             onClick={() => confirm(`CAUTION: Are you sure you want to DEACTIVATE ${emp.name}? This action is restricted to Tier 3 Admin only.`)}
+           >
               <UserX className="h-3.5 w-3.5 mr-2" /> Deactivate
            </Button>
         </div>
@@ -79,7 +255,7 @@ export default function EmployeeProfilePage() {
            <Card className="bg-bg-surface border-border-default shadow-sm overflow-hidden border-t-4 border-brand-default">
               <CardContent className="pt-8 pb-6 px-6 text-center">
                  <div className="relative inline-block group">
-                    <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-bg-surface shadow-2xl group-hover:scale-105 transition-all duration-500">
+                    <Avatar className="h-24 w-24 sm:h-32 sm:w-32 border-4 border-bg-surface shadow-2xl group-hover:scale-105 transition-all duration-500 cursor-pointer">
                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${emp.name}`} />
                        <AvatarFallback className="bg-bg-sunken text-2xl font-bold text-text-secondary">{initials}</AvatarFallback>
                     </Avatar>
@@ -92,33 +268,33 @@ export default function EmployeeProfilePage() {
                  <p className="text-brand-text font-mono font-bold text-[11px] uppercase tracking-[0.2em] mt-1">{emp.role}</p>
                  
                  <div className="mt-8 grid grid-cols-2 gap-4">
-                    <div className="text-center p-3 rounded-xl bg-bg-sunken/50 border border-border-subtle">
+                    <div className="text-center p-3 rounded-xl bg-bg-sunken/50 border border-border-subtle hover:bg-bg-elevated transition-fast cursor-pointer">
                        <p className="text-[10px] font-mono font-bold text-text-tertiary uppercase mb-1">Joined</p>
                        <p className="text-xs font-bold text-text-primary">{emp.joined}</p>
                     </div>
-                    <div className="text-center p-3 rounded-xl bg-bg-sunken/50 border border-border-subtle">
+                    <div className="text-center p-3 rounded-xl bg-bg-sunken/50 border border-border-subtle hover:bg-bg-elevated transition-fast cursor-pointer">
                        <p className="text-[10px] font-mono font-bold text-text-tertiary uppercase mb-1">Level</p>
                        <p className="text-xs font-bold text-text-primary">{emp.level}</p>
                     </div>
                  </div>
               </CardContent>
               <div className="border-t border-border-subtle px-6 py-4 bg-bg-panel/30 space-y-3">
-                 <div className="flex items-center gap-3 text-xs text-text-secondary">
-                    <Mail className="h-3.5 w-3.5 text-text-tertiary" />
+                 <div className="flex items-center gap-3 text-xs text-text-secondary hover:text-brand-text transition-fast cursor-pointer group">
+                    <Mail className="h-3.5 w-3.5 text-text-tertiary group-hover:text-brand-text" />
                     <span>{emp.email}</span>
                  </div>
-                 <div className="flex items-center gap-3 text-xs text-text-secondary">
-                    <Briefcase className="h-3.5 w-3.5 text-text-tertiary" />
+                 <div className="flex items-center gap-3 text-xs text-text-secondary hover:text-brand-text transition-fast cursor-pointer group">
+                    <Briefcase className="h-3.5 w-3.5 text-text-tertiary group-hover:text-brand-text" />
                     <span>{emp.dept} Department</span>
                  </div>
-                 <div className="flex items-center gap-3 text-xs text-text-secondary">
-                    <MapPin className="h-3.5 w-3.5 text-text-tertiary" />
+                 <div className="flex items-center gap-3 text-xs text-text-secondary hover:text-brand-text transition-fast cursor-pointer group">
+                    <MapPin className="h-3.5 w-3.5 text-text-tertiary group-hover:text-brand-text" />
                     <span>Jakarta, Indonesia (HQ)</span>
                  </div>
               </div>
            </Card>
 
-           <Card className="bg-bg-surface border-border-default shadow-sm overflow-hidden">
+           <Card className="bg-bg-surface border-border-default shadow-sm overflow-hidden group hover:border-brand-default transition-all duration-300">
               <CardHeader className="pb-3 border-b border-border-subtle">
                  <CardTitle className="text-xs font-syne font-bold uppercase tracking-widest text-text-tertiary">Performance Summary</CardTitle>
               </CardHeader>
@@ -128,9 +304,9 @@ export default function EmployeeProfilePage() {
                    { label: "Commit Consistency", value: 88, color: "bg-brand-default" },
                    { label: "SLA Adherence", value: 76, color: "bg-amber-500" },
                  ].map((stat, i) => (
-                   <div key={i} className="space-y-2">
+                   <div key={i} className="space-y-2 group/bar cursor-pointer">
                       <div className="flex justify-between items-center text-[11px] font-bold">
-                         <span className="text-text-secondary">{stat.label}</span>
+                         <span className="text-text-secondary group-hover/bar:text-text-primary transition-fast">{stat.label}</span>
                          <span className="text-text-primary">{stat.value}%</span>
                       </div>
                       <div className="h-1.5 w-full bg-bg-sunken rounded-full overflow-hidden">
@@ -146,10 +322,14 @@ export default function EmployeeProfilePage() {
         <div className="lg:col-span-8 space-y-6">
            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
-                { icon: Award, label: "Total Awards", value: "14", color: "text-amber-500", bg: "bg-amber-500/10" },
-                { icon: ShieldCheck, label: "Security Level", value: "Tier 1", color: "text-emerald-500", bg: "bg-emerald-500/10" },
+                { icon: Award, label: "Total Awards", value: "14", color: "text-amber-500", bg: "bg-amber-500/10", action: "Award history" },
+                { icon: ShieldCheck, label: "Security Level", value: "Tier 1", color: "text-emerald-500", bg: "bg-emerald-500/10", action: "Security clearance" },
               ].map((item, i) => (
-                <div key={i} className="bg-bg-surface border border-border-default p-4 rounded-2xl flex items-center gap-4 shadow-sm group hover:border-brand-default transition-fast cursor-pointer">
+                <div 
+                  key={i} 
+                  onClick={() => alert(`Viewing ${item.action}...`)}
+                  className="bg-bg-surface border border-border-default p-4 rounded-2xl flex items-center gap-4 shadow-sm group hover:border-brand-default transition-fast cursor-pointer"
+                >
                    <div className={cn("h-12 w-12 rounded-xl flex items-center justify-center shrink-0 group-hover:scale-110 transition-fast", item.bg)}>
                       <item.icon className={cn("h-6 w-6", item.color)} />
                    </div>
@@ -189,40 +369,88 @@ export default function EmployeeProfilePage() {
                  </CardContent>
               </Card>
 
-              <Card className="bg-bg-surface border-border-default shadow-sm">
-                 <CardHeader className="border-b border-border-subtle pb-4">
+              <Card className="bg-bg-surface border-border-default shadow-sm group hover:border-brand-default transition-all duration-300">
+                 <CardHeader className="border-b border-border-subtle pb-4 bg-bg-panel/10">
                     <div className="flex items-center gap-2">
                        <Star className="h-4 w-4 text-amber-500" />
-                       <CardTitle className="font-syne text-[15px]">Team Collaboration</CardTitle>
+                       <CardTitle className="font-syne text-[15px] font-bold uppercase tracking-tight">Team Collaboration</CardTitle>
                     </div>
                  </CardHeader>
                  <CardContent className="pt-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                       {[
-                         { team: "Engineering Core", count: 12, status: "Active" },
-                         { team: "Security Tiger Team", count: 4, status: "Standby" },
-                       ].map((t, i) => (
-                         <div key={i} className="p-4 rounded-xl border border-border-subtle hover:bg-bg-sunken transition-fast cursor-pointer">
-                            <div className="flex justify-between items-center mb-2">
-                               <span className="text-[13px] font-bold text-text-primary">{t.team}</span>
-                               <span className={cn(
-                                 "text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-tighter",
-                                 t.status === "Active" ? "bg-emerald-500/10 text-emerald-500" : "bg-text-tertiary/10 text-text-tertiary"
-                               )}>{t.status}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                               <div className="flex -space-x-2">
-                                  {[1, 2, 3].map(a => (
-                                    <div key={a} className="h-6 w-6 rounded-full border-2 border-bg-surface bg-bg-sunken flex items-center justify-center text-[10px] font-bold text-text-tertiary">
-                                       {a}
-                                    </div>
-                                  ))}
+                     {!teamId || teamId === "none" ? (
+                        <div className="p-8 border-2 border-dashed border-border-subtle rounded-xl text-center bg-bg-panel/10 hover:bg-bg-panel/20 transition-all">
+                           <Users className="h-8 w-8 text-text-tertiary mx-auto mb-3 opacity-20" />
+                           <p className="text-[11px] font-bold text-text-secondary uppercase tracking-[0.2em] mb-3">No Active Team Deployment</p>
+                           <Button 
+                             onClick={() => setIsEditOpen(true)}
+                             variant="outline" 
+                             className="h-8 text-[10px] font-bold border-brand-default/30 text-brand-text hover:bg-brand-default/5"
+                           >
+                              ASSIGN OPERATIONAL UNIT
+                           </Button>
+                        </div>
+                     ) : (
+                        <div className="grid grid-cols-1 gap-4">
+                           <Dialog>
+                             <DialogTrigger asChild>
+                               <div className="p-4 rounded-xl border border-border-subtle hover:bg-bg-sunken hover:border-brand-default/50 transition-all duration-300 cursor-pointer group shadow-sm bg-bg-panel/20">
+                                  <div className="flex justify-between items-center mb-4">
+                                     <div className="flex items-center gap-2">
+                                        <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                                        <span className="text-[14px] font-syne font-bold text-text-primary tracking-tight group-hover:text-brand-text transition-fast">{empRaw.employeeProfile?.team?.name || "Assigned Team"}</span>
+                                     </div>
+                                     <div className="bg-emerald-500/10 text-emerald-500 border-none rounded-none text-[9px] font-bold tracking-widest px-2 py-0.5 uppercase">Active</div>
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                     <div className="flex items-center gap-2">
+                                        <div className="flex -space-x-3">
+                                           {teamMembers.slice(0, 5).map((m: any, idx: number) => (
+                                             <Avatar key={idx} className="h-7 w-7 rounded-none border-2 border-bg-surface bg-bg-sunken shrink-0 shadow-sm ring-1 ring-black/5">
+                                                 <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${m.user.firstName}`} />
+                                                 <AvatarFallback className="text-[10px] font-bold text-text-tertiary">{m.user.firstName[0]}</AvatarFallback>
+                                             </Avatar>
+                                           ))}
+                                        </div>
+                                        {teamMembers.length > 5 && (
+                                           <span className="text-[10px] text-text-tertiary font-bold ml-1 uppercase">+{teamMembers.length - 5} Others</span>
+                                        )}
+                                     </div>
+                                     <Button variant="ghost" size="sm" className="h-6 text-[9px] font-bold text-brand-text uppercase group-hover:underline">VIEW SQUAD</Button>
+                                  </div>
                                </div>
-                               <span className="text-[11px] text-text-tertiary font-medium">+{t.count - 3} others</span>
-                            </div>
-                         </div>
-                       ))}
-                    </div>
+                             </DialogTrigger>
+                             <DialogContent className="max-w-md bg-bg-surface border-border-default shadow-2xl p-0 overflow-hidden">
+                               <div className="h-1.5 w-full bg-brand-default" />
+                               <DialogHeader className="p-6 border-b border-border-subtle bg-bg-panel/30">
+                                 <DialogTitle className="font-syne text-lg flex items-center gap-2 uppercase tracking-tight font-bold">
+                                   <Star className="h-5 w-5 text-brand-text" /> 
+                                   Team Squad: {empRaw.employeeProfile?.team?.name}
+                                 </DialogTitle>
+                                 <p className="text-[10px] font-mono text-text-tertiary uppercase tracking-widest mt-1">Operational Unit Deployment Ledger</p>
+                               </DialogHeader>
+                               <div className="p-6 max-h-[400px] overflow-y-auto space-y-3">
+                                 {teamMembers.map((m: any) => (
+                                   <div key={m.user.id} className="flex items-center justify-between p-3 bg-bg-panel/50 border border-border-subtle hover:border-brand-default/30 transition-all group">
+                                      <div className="flex items-center gap-3">
+                                         <Avatar className="h-10 w-10 rounded-none border border-border-subtle shadow-sm group-hover:scale-105 transition-fast">
+                                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${m.user.firstName}`} />
+                                            <AvatarFallback className="font-bold">{m.user.firstName[0]}</AvatarFallback>
+                                         </Avatar>
+                                         <div>
+                                            <p className="text-xs font-bold text-text-primary capitalize">{m.user.firstName} {m.user.lastName} {m.user.id === id && "(You)"}</p>
+                                            <p className="text-[10px] text-brand-text font-bold uppercase tracking-tighter opacity-80">{m.jobTitle || "Team Member"}</p>
+                                         </div>
+                                      </div>
+                                      {m.user.id === empRaw.employeeProfile?.team?.leadId && (
+                                         <div className="bg-amber-500/10 text-amber-500 border-none text-[9px] font-bold tracking-widest rounded-none px-2 py-0.5">LEAD</div>
+                                      )}
+                                   </div>
+                                 ))}
+                               </div>
+                             </DialogContent>
+                           </Dialog>
+                        </div>
+                     )}
                  </CardContent>
               </Card>
            </div>

@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import { 
   LayoutDashboard, 
   Layers, 
@@ -15,8 +16,13 @@ import {
   ChevronDown,
   Monitor,
   Menu,
-  X
+  X,
+  Building2,
+  ShieldCheck,
+  Lock,
+  Zap
 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -32,7 +38,7 @@ import {
 import { NotificationCenter } from "@/components/dashboard/NotificationCenter";
 import { GlobalSearch } from "@/components/dashboard/GlobalSearch";
 import { AuthGuard } from "@/components/auth/AuthGuard";
-import { clearAuth, getUser } from "@/lib/auth";
+import { apiFetch, clearAuth, getUser } from "@/lib/auth";
 import type { LucideIcon } from "lucide-react";
 
 type SubItem = { label: string; href: string };
@@ -75,6 +81,14 @@ const navGroups: NavGroup[] = [
       { label: "Analytics", icon: TrendingUp, href: "/dashboard/analytics" },
       { label: "Documentation", icon: HelpCircle, href: "/dashboard/docs" },
     ]
+  },
+  {
+    title: "Enterprise",
+    items: [
+      { label: "Organization", icon: Building2, href: "/dashboard/settings/organization" },
+      { label: "Security Audit", icon: ShieldCheck, href: "/dashboard/settings/audit" },
+      { label: "Access Control", icon: Lock, href: "/dashboard/settings/rbac" },
+    ]
   }
 ];
 
@@ -87,18 +101,42 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const user = getUser();
+  const hasShownWelcome = typeof window !== "undefined" ? localStorage.getItem("Vanguard_welcome_v2") : "true";
 
   // Close sidebar on route change on mobile
   useEffect(() => {
     setSidebarOpen(false);
-  }, [pathname]);
+    
+    if (!hasShownWelcome) {
+      toast("Vanguard Enterprise Command Hub Active", {
+        description: "Press ⌘K anytime to access global actions & strategic goals.",
+        icon: <Zap className="h-4 w-4 text-brand-text" />,
+      });
+      localStorage.setItem("Vanguard_welcome_v2", "true");
+    }
+  }, [pathname, hasShownWelcome]);
 
   function handleLogout() {
     clearAuth();
     router.replace("/login");
   }
 
-  const pageLabel = pathname.split("/").pop()?.replace(/-/g, " ") || "overview";
+  const pathParts = pathname.split("/").filter(Boolean).slice(1); // root / dashboard / [parts...]
+  const pageLabel = pathParts[pathParts.length - 1]?.replace(/-/g, " ") || "overview";
+
+  const breadcrumbs = pathParts.map((part, i) => ({
+    label: part.replace(/-/g, " "),
+    href: "/dashboard/" + pathParts.slice(0, i + 1).join("/"),
+    isLast: i === pathParts.length - 1
+  }));
+
+  const { data: kpis } = useQuery({
+    queryKey: ["dashboard-kpis-sidebar"],
+    queryFn: () => apiFetch<{ openTickets: number }>("/api/v1/analytics/kpis"),
+    staleTime: 60_000,
+  });
+
+  const openTickets = kpis?.openTickets ?? 0;
 
   return (
     <AuthGuard>
@@ -119,10 +157,10 @@ export default function DashboardLayout({
 
             <div className="flex items-center gap-1.5">
               <div className="h-5 w-5 rounded bg-brand-default flex items-center justify-center shrink-0">
-                <span className="text-[9px] font-syne font-bold text-white">N</span>
+                <span className="text-[9px] font-syne font-bold text-white">V</span>
               </div>
               <span className="hidden sm:inline font-syne font-semibold text-xs tracking-tight text-text-primary">
-                Nexus EMS
+                Vanguard
               </span>
             </div>
 
@@ -187,6 +225,22 @@ export default function DashboardLayout({
                   Preferences
                 </DropdownMenuItem>
                 <DropdownMenuSeparator className="bg-border-subtle" />
+                <DropdownMenuLabel className="font-syne text-[10px] text-text-secondary">ENTERPRISE COMMAND</DropdownMenuLabel>
+                <DropdownMenuItem
+                  className="cursor-pointer text-xs font-medium p-2 focus:bg-brand-muted focus:text-brand-text"
+                  onClick={() => router.push("/dashboard/settings/organization")}
+                >
+                  <Building2 className="mr-2 h-3.5 w-3.5" />
+                  Org Management
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  className="cursor-pointer text-xs font-medium p-2 focus:bg-brand-muted focus:text-brand-text"
+                  onClick={() => router.push("/dashboard/settings/audit")}
+                >
+                  <ShieldCheck className="mr-2 h-3.5 w-3.5" />
+                  Security Audit
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-border-subtle" />
                 <DropdownMenuItem
                   className="cursor-pointer text-xs font-medium p-2 text-crimson-500 focus:bg-crimson-500/10 focus:text-crimson-500"
                   onClick={handleLogout}
@@ -225,9 +279,9 @@ export default function DashboardLayout({
               <Button variant="outline" className="w-full justify-between h-8 px-2.5 border-border-default bg-bg-surface hover:bg-bg-elevated text-text-secondary hover:text-text-primary transition-fast overflow-hidden">
                 <div className="flex items-center gap-2 truncate">
                   <div className="h-3.5 w-3.5 rounded bg-violet-500 flex items-center justify-center shrink-0">
-                    <span className="text-[7px] font-bold text-white">N</span>
+                    <span className="text-[7px] font-bold text-white">V</span>
                   </div>
-                  <span className="text-[11px] font-semibold truncate">Nexus Corp</span>
+                  <span className="text-[11px] font-semibold truncate">Vanguard Corp</span>
                 </div>
                 <ChevronDown className="h-3 w-3 opacity-50 shrink-0" />
               </Button>
@@ -255,9 +309,9 @@ export default function DashboardLayout({
                         )}
                         <item.icon className="h-3.5 w-3.5 shrink-0" />
                         <span className="truncate">{item.label}</span>
-                        {item.label === "Tickets" && (
+                        {item.label === "Tickets" && openTickets > 0 && (
                           <span className="ml-auto bg-crimson-500 text-[9px] text-white px-1.5 py-0.5 rounded-full font-bold shrink-0">
-                            3
+                            {openTickets}
                           </span>
                         )}
                       </Link>
@@ -301,10 +355,12 @@ export default function DashboardLayout({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[11px] font-semibold text-text-primary truncate">
-                    {user ? `${user.firstName} ${user.lastName}` : "Wisnu Dev"}
+                    {user?.firstName && user?.lastName 
+                      ? `${user.firstName} ${user.lastName}` 
+                      : user?.email || "Vanguard Engineer"}
                   </p>
                   <p className="text-[9px] text-text-tertiary truncate">
-                    {user?.email || "admin@nexus.co"}
+                    {user?.email || "admin@Vanguard.co"}
                   </p>
                 </div>
               </div>
@@ -316,9 +372,20 @@ export default function DashboardLayout({
             {/* Sub-header (40px) */}
             <div className="h-10 border-b border-border-subtle flex items-center justify-between px-3 sm:px-4 shrink-0 bg-bg-page/50 backdrop-blur-sm">
               <nav className="flex items-center gap-1.5 text-[10px] font-medium text-text-tertiary">
-                <Link href="/dashboard" className="hover:text-text-secondary transition-fast">Nexus EMS</Link>
-                <span>/</span>
-                <span className="text-text-secondary capitalize">{pageLabel}</span>
+                <Link href="/dashboard" className="hover:text-text-secondary transition-fast">Vanguard</Link>
+                {breadcrumbs.length > 0 && <span>/</span>}
+                {breadcrumbs.map((bc, i) => (
+                  <div key={bc.href} className="flex items-center gap-1.5">
+                    {bc.isLast ? (
+                      <span className="text-text-secondary capitalize">{bc.label}</span>
+                    ) : (
+                      <>
+                        <Link href={bc.href} className="hover:text-text-secondary transition-fast capitalize">{bc.label}</Link>
+                        <span>/</span>
+                      </>
+                    )}
+                  </div>
+                ))}
               </nav>
               <div className="flex items-center gap-1.5">
                 <Button

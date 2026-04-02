@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Users, Plus, Search, Filter, ArrowUpRight } from "lucide-react";
+import { Users, Plus, Search, Filter, ArrowUpRight, Download } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { apiFetch } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
 
 interface Employee {
   id: string;
@@ -25,16 +26,22 @@ interface Employee {
 
 async function fetchEmployees(): Promise<Employee[]> {
   try {
-    const data = await apiFetch<{ data: Employee[] }>("/api/v1/employees");
-    return data?.data ?? [];
+    const data = await apiFetch<{ data: any[] }>("/api/v1/hr/employees");
+    return (data?.data ?? []).map(user => ({
+      id: user.id,
+      name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : (user.email.split('@')[0]),
+      email: user.email,
+      status: user.status === 'ACTIVE' ? 'Active' : (user.status === 'PENDING' ? 'Active' : 'Inactive'),
+      department: user.employeeProfile?.department?.name || "Unassigned",
+      jobTitle: user.employeeProfile?.jobTitle || "Vanguard Member",
+      level: user.employeeProfile?.level || "Engineer",
+      joined: user.employeeProfile?.joinDate || user.createdAt,
+    }));
   } catch {
     return [
-      { id: "1", name: "Arif Kurniawan",    email: "arif@nexus.co",    jobTitle: "Principal Engineer",  department: "Engineering",     status: "Active",   level: "Senior",   joined: "2023-03-15" },
-      { id: "2", name: "Rania Santoso",     email: "rania@nexus.co",   jobTitle: "Product Manager",     department: "Product",         status: "On Leave",  level: "Lead",     joined: "2022-07-01" },
-      { id: "3", name: "Damar Haryanto",    email: "damar@nexus.co",   jobTitle: "DevOps Engineer",     department: "Infrastructure",  status: "Active",   level: "Mid",      joined: "2023-09-20" },
-      { id: "4", name: "Putri Andriani",    email: "putri@nexus.co",   jobTitle: "Frontend Engineer",   department: "Engineering",     status: "Active",   level: "Junior",   joined: "2024-01-10" },
-      { id: "5", name: "Budi Mahendra",     email: "budi@nexus.co",    jobTitle: "QA Engineer",         department: "Quality",         status: "Active",   level: "Mid",      joined: "2023-06-01" },
-      { id: "6", name: "Sari Wijaya",       email: "sari@nexus.co",    jobTitle: "HR Manager",          department: "Human Resources", status: "Active",   level: "Senior",   joined: "2022-01-15" },
+      { id: "1", name: "Arif Kurniawan",    email: "arif@Vanguard.co",    jobTitle: "Principal Engineer",  department: "Engineering",     status: "Active",   level: "Senior",   joined: "2023-03-15" },
+      { id: "2", name: "Rania Santoso",     email: "rania@Vanguard.co",   jobTitle: "Product Manager",     department: "Product",         status: "On Leave",  level: "Lead",     joined: "2022-07-01" },
+      { id: "3", name: "Damar Haryanto",    email: "damar@Vanguard.co",   jobTitle: "DevOps Engineer",     department: "Infrastructure",  status: "Active",   level: "Mid",      joined: "2023-09-20" },
     ];
   }
 }
@@ -73,6 +80,25 @@ export default function HRPage() {
     );
   });
 
+  const handleExport = () => {
+    if (!employees || employees.length === 0) return;
+    const csvContent = [
+      ["Employee ID", "Name", "Email", "Department", "Role", "Status"],
+      ...employees.map(e => [e.id, e.name, e.email, typeof e.department === 'string' ? e.department : e.department?.name, e.jobTitle, e.status])
+    ].map(e => e.join(",")).join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Vanguard_employee_directory_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("Employee directory exported successfully.");
+  };
+
   const activeCount = employees.filter((e: Employee) => e.status === "Active").length;
   const onLeaveCount = employees.filter((e: Employee) => e.status === "On Leave").length;
 
@@ -96,9 +122,16 @@ export default function HRPage() {
           <Button 
             variant="outline" 
             className="flex-1 sm:flex-none h-8 px-2.5 border-border-default text-text-secondary hover:text-text-primary hover:bg-bg-elevated text-[11px] sm:text-xs font-medium transition-fast"
-            onClick={() => alert("Filters modal triggered...")}
+            onClick={() => toast.info("Filter modal coming soon in next release.")}
           >
             <Filter className="h-3.5 w-3.5 mr-1.5" /> Filters
+          </Button>
+          <Button 
+            variant="outline"
+            className="flex-1 sm:flex-none h-8 px-2.5 border-border-default text-text-secondary hover:text-text-primary hover:bg-bg-elevated text-[11px] sm:text-xs font-medium transition-fast"
+            onClick={handleExport}
+          >
+            <Download className="h-3.5 w-3.5 mr-1.5" /> Export
           </Button>
           <Button 
             className="flex-1 sm:flex-none h-8 px-3 bg-brand-default hover:bg-brand-hover text-white text-[11px] sm:text-xs font-bold transition-fast shadow-brand"
@@ -111,7 +144,7 @@ export default function HRPage() {
 
       <div className="flex overflow-x-auto snap-x snap-mandatory lg:grid lg:grid-cols-4 gap-2.5 pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:pb-0 no-scrollbar">
         <MetricCard className="min-w-[140px] w-[42vw] sm:w-auto shrink-0 snap-center" label="TOTAL EMPLOYEES" value={isLoading ? "—" : employees.length} trend={12} trendDirection="higher-is-better" status="normal" progress={Math.round((activeCount / Math.max(employees.length, 1)) * 100)} />
-        <MetricCard className="min-w-[140px] w-[42vw] sm:w-auto shrink-0 snap-center" label="OPEN POSITIONS" value="42" trend={5} trendDirection="higher-is-better" status="warning" progress={42} onClick={() => alert("Redirecting to Internal Job Board...")} />
+        <MetricCard className="min-w-[140px] w-[42vw] sm:w-auto shrink-0 snap-center" label="OPEN POSITIONS" value="42" trend={5} trendDirection="higher-is-better" status="warning" progress={42} onClick={() => toast.loading("Redirecting to Internal Job Board...")} />
         <MetricCard className="min-w-[140px] w-[42vw] sm:w-auto shrink-0 snap-center" label="ON LEAVE TODAY" value={isLoading ? "—" : onLeaveCount} trend={-8} trendDirection="lower-is-better" status="normal" progress={Math.round((onLeaveCount / Math.max(employees.length, 1)) * 100)} href="/dashboard/hr/leave" />
         <MetricCard className="min-w-[140px] w-[42vw] sm:w-auto shrink-0 snap-center" label="PERFORMANCE AVG" value="4.8" unit="/5" trend={4} trendDirection="higher-is-better" status="success" progress={96} href="/dashboard/hr/performance" />
       </div>

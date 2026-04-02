@@ -37,7 +37,12 @@ export const updateProfileSchema = z.object({
   slackHandle: z.string().optional(),
 });
 
+export const googleLoginSchema = z.object({
+  idToken: z.string(),
+});
+
 export type LoginInput = z.infer<typeof loginSchema>;
+export type GoogleLoginInput = z.infer<typeof googleLoginSchema>;
 export type MfaVerifyInput = z.infer<typeof mfaVerifySchema>;
 export type AuthResponse = z.infer<typeof authResponseSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

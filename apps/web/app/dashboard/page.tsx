@@ -3,7 +3,7 @@
 import {
   Layers, Clock,
   Download, Filter, MoreHorizontal,
-  Circle
+  Circle, ArrowDownRight, FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -17,6 +17,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch, getUser } from "@/lib/auth";
+import { toast } from "sonner";
 
 const translations = {
   en: {
@@ -24,8 +25,8 @@ const translations = {
     sprint: ["Sprint 14", "6 days left", "14 open tasks"],
     export: "Export",
     metrics: { scale: "TOTAL SCALE", open: "OPEN ISSUES", sla: "SLA ADHERENCE", velo: "TEAM VELOCITY" },
-    activity: { title: "Weekly Activity", desc: "Commits & code reviews" },
-    tasks: { title: "My Tasks", desc: "Due today & soon", viewAll: "View all tasks" },
+    activity: { title: "System Activity", desc: "Ticket reporting & resolution trends" },
+    tasks: { title: "Recent Interactions", desc: "Latest ticket activity", viewAll: "View all tickets" },
     incidents: { title: "Critical Incidents", desc: "Active high-priority tickets", viewAll: "View all" },
     team: { title: "Team Online", desc: "3 active" }
   },
@@ -34,21 +35,21 @@ const translations = {
     sprint: ["Sprint 14", "6 hari lagi", "14 tugas terbuka"],
     export: "Ekspor",
     metrics: { scale: "SKALA TOTAL", open: "ISU TERBUKA", sla: "KEPATUHAN SLA", velo: "VELOSITAS TIM" },
-    activity: { title: "Aktivitas Mingguan", desc: "Komit & ulasan kode" },
-    tasks: { title: "Tugas Saya", desc: "Jatuh tempo hari ini & segera", viewAll: "Lihat semua tugas" },
+    activity: { title: "Aktivitas Sistem", desc: "Tren pelaporan & penyelesaian tiket" },
+    tasks: { title: "Interaksi Terbaru", desc: "Aktivitas tiket terakhir", viewAll: "Lihat semua tiket" },
     incidents: { title: "Insiden Kritis", desc: "Tiket prioritas tinggi aktif", viewAll: "Lihat semua" },
     team: { title: "Tim Online", desc: "3 aktif" }
   }
 };
 
-const barData = [
-  { name: "Mon", commits: 45, reviews: 12 },
-  { name: "Tue", commits: 52, reviews: 18 },
-  { name: "Wed", commits: 38, reviews: 15 },
-  { name: "Thu", commits: 65, reviews: 22 },
-  { name: "Fri", commits: 48, reviews: 20 },
-  { name: "Sat", commits: 15, reviews: 5 },
-  { name: "Sun", commits: 10, reviews: 3 },
+const barDataFallback = [
+  { name: "Mon", reported: 4, resolved: 2 },
+  { name: "Tue", reported: 6, resolved: 4 },
+  { name: "Wed", reported: 3, resolved: 5 },
+  { name: "Thu", reported: 8, resolved: 3 },
+  { name: "Fri", reported: 5, resolved: 6 },
+  { name: "Sat", reported: 2, resolved: 1 },
+  { name: "Sun", reported: 1, resolved: 2 },
 ];
 
 export default function DashboardPage() {
@@ -69,8 +70,40 @@ export default function DashboardPage() {
 
   const { data: insights, isLoading: isInsightsLoading } = useQuery({
     queryKey: ["dashboard-insights"],
-    queryFn: () => apiFetch<{ recentTickets: { id: string; title: string; status: string; priority: string }[]; averageTicketResolutionTime: string; slaCompliance: string }>("/api/v1/analytics/insights"),
+    queryFn: () => apiFetch<{ recentTickets: { id: string; title: string; status: string; priority: string }[]; ticketTrend: { name: string; reported: number; resolved: number }[]; averageTicketResolutionTime: string; slaCompliance: string }>("/api/v1/analytics/insights"),
   });
+
+  const [healthFluctuation, setHealthFluctuation] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setHealthFluctuation(Math.random() * 5);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const handleExport = () => {
+    if (!kpis) return;
+    const csvContent = [
+      ["Metric", "Value"],
+      ["Total Scale", kpis.totalUsers],
+      ["Open Issues", kpis.openTickets],
+      ["Total Projects", kpis.totalProjects],
+      ["Active Sprints", kpis.activeSprints],
+      ["SLA Compliance", insights?.slaCompliance || "99.4%"],
+      ["Avg Resolution", insights?.averageTicketResolutionTime || "2.4h"]
+    ].map(e => e.join(",")).join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Vanguard_dashboard_report_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success("System activity report exported successfully.");
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -98,10 +131,18 @@ export default function DashboardPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="h-9 px-4 border-border-default text-[13px] font-bold text-text-secondary hover:bg-bg-elevated transition-fast">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-9 px-4 border-border-default text-[13px] font-bold text-text-secondary hover:bg-bg-elevated transition-fast"
+            onClick={() => toast.info("Advanced filter controls coming soon...")}
+          >
             <Filter className="h-3.5 w-3.5 mr-2" /> Filter
           </Button>
-          <Button className="h-9 px-4 bg-brand-default hover:bg-brand-hover text-white text-[13px] font-bold transition-fast shadow-brand">
+          <Button 
+            onClick={handleExport}
+            className="h-9 px-4 bg-brand-default hover:bg-brand-hover text-white text-[13px] font-bold transition-fast shadow-brand"
+          >
             <Download className="h-3.5 w-3.5 mr-2" /> {t.export}
           </Button>
         </div>
@@ -144,18 +185,18 @@ export default function DashboardPage() {
               <h3 className="font-syne font-bold text-lg text-text-primary tracking-tight">{t.activity.title}</h3>
               <p className="text-text-tertiary font-dmsans text-[13px]">{t.activity.desc}</p>
             </div>
-            <div className="flex items-center gap-4 text-[11px] font-bold text-text-tertiary">
+              <div className="flex items-center gap-4 text-[11px] font-bold text-text-tertiary">
                <div className="flex items-center gap-1.5">
-                <div className="h-2 w-2 rounded-full bg-brand-default" /> Commits
+                <div className="h-2 w-2 rounded-full bg-brand-default" /> Reported
               </div>
               <div className="flex items-center gap-1.5">
-                <div className="h-2 w-2 rounded-full bg-brand-muted" /> Reviews
+                <div className="h-2 w-2 rounded-full bg-brand-muted" /> Resolved
               </div>
             </div>
           </div>
           <div className="h-[280px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+              <BarChart data={insights?.ticketTrend || barDataFallback} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-subtle)" opacity={0.5} />
                 <XAxis 
                   dataKey="name" 
@@ -179,8 +220,8 @@ export default function DashboardPage() {
                     boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)'
                   }}
                 />
-                <Bar dataKey="commits" fill="var(--brand-default)" radius={[4, 4, 0, 0]} barSize={24} />
-                <Bar dataKey="reviews" fill="var(--brand-muted)" radius={[4, 4, 0, 0]} barSize={24} />
+                <Bar dataKey="reported" fill="var(--brand-default)" radius={[4, 4, 0, 0]} barSize={24} />
+                <Bar dataKey="resolved" fill="var(--brand-muted)" radius={[4, 4, 0, 0]} barSize={24} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -220,7 +261,11 @@ export default function DashboardPage() {
                 <p className="text-xs text-text-tertiary">No recent tasks</p>
               )}
             </div>
-            <Button variant="ghost" className="w-full mt-6 h-9 text-[11px] font-bold text-text-tertiary hover:text-brand-text hover:bg-brand-default/5 transition-fast">
+            <Button 
+              variant="ghost" 
+              onClick={() => router.push('/dashboard/tickets')}
+              className="w-full mt-6 h-9 text-[11px] font-bold text-text-tertiary hover:text-brand-text hover:bg-brand-default/5 transition-fast"
+            >
               {t.tasks.viewAll}
             </Button>
           </div>
@@ -233,7 +278,7 @@ export default function DashboardPage() {
               <p className="text-[10px] font-mono font-bold uppercase tracking-widest opacity-80 mb-2">QUICK ACCESS</p>
               <h3 className="font-syne font-bold text-xl mb-1 tracking-tight">Active Sprints</h3>
               <p className="text-[13px] font-dmsans opacity-80 leading-snug">Monitor real-time progress of all ongoing development cycles.</p>
-              <Button size="sm" className="mt-4 h-8 bg-white text-brand-default hover:bg-brand-muted hover:text-brand-text font-bold text-[11px] transition-fast rounded-lg" onClick={() => router.push('/dashboard/projects')}>
+              <Button size="sm" className="mt-4 h-8 bg-slate-900 hover:bg-black text-white font-bold text-[11px] transition-all rounded-lg border border-white/10 shadow-lg" onClick={() => router.push('/dashboard/projects')}>
                 Go to Projects <Circle className="h-2 w-2 ml-2 fill-current" />
               </Button>
             </div>
@@ -249,30 +294,38 @@ export default function DashboardPage() {
               <h3 className="font-syne font-bold text-text-primary tracking-tight">{t.incidents.title}</h3>
               <p className="text-[11px] text-text-tertiary font-medium">{t.incidents.desc}</p>
             </div>
-            <Button variant="ghost" className="h-8 text-[11px] font-bold text-brand-text hover:bg-brand-default/5">
+            <Button 
+              variant="ghost" 
+              onClick={() => router.push('/dashboard/tickets?priority=CRITICAL')}
+              className="h-8 text-[11px] font-bold text-brand-text hover:bg-brand-default/5"
+            >
               {t.incidents.viewAll}
             </Button>
           </div>
           <div className="divide-y divide-border-subtle">
-            {[
-              { id: "INC-882", title: "API latency increase in ap-southeast-1", severity: "HIGH", time: "14m ago" },
-              { id: "INC-881", title: "Auth sessions failing on mobile clients", severity: "CRITICAL", time: "1h ago" },
-              { id: "INC-875", title: "Minor css regression in dark mode (settings)", severity: "LOW", time: "4h ago" },
-            ].map((inc) => (
-              <div key={inc.id} className="px-6 py-3.5 flex items-center justify-between hover:bg-bg-sunken transition-fast cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    "h-2 w-2 rounded-full",
-                    inc.severity === 'CRITICAL' ? 'bg-crimson-500' : inc.severity === 'HIGH' ? 'bg-amber-500' : 'bg-emerald-500'
-                  )} />
-                  <div>
-                    <p className="text-[13px] font-bold text-text-primary leading-tight">{inc.title}</p>
-                    <p className="text-[10px] font-mono font-bold text-text-tertiary uppercase tracking-widest mt-0.5">{inc.id} • {inc.time}</p>
+            {isInsightsLoading ? (
+               <div className="px-6 py-8 text-center text-xs text-text-tertiary">Analyzing system telemetry...</div>
+            ) : insights?.recentTickets?.length ? (
+              insights.recentTickets.filter(t => t.priority === 'CRITICAL' || t.priority === 'HIGH').slice(0, 3).map((inc) => (
+                <div key={inc.id} className="px-6 py-3.5 flex items-center justify-between hover:bg-bg-sunken transition-fast cursor-pointer" onClick={() => router.push(`/dashboard/tickets/${inc.id}`)}>
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      "h-2 w-2 rounded-full",
+                      inc.priority === 'CRITICAL' ? 'bg-crimson-500' : 'bg-amber-500'
+                    )} />
+                    <div>
+                      <p className="text-[13px] font-bold text-text-primary leading-tight">{inc.title}</p>
+                      <p className="text-[10px] font-mono font-bold text-text-tertiary uppercase tracking-widest mt-0.5">{inc.id.slice(0, 8)} • ACTIVE</p>
+                    </div>
                   </div>
+                  <ArrowDownRight className="h-4 w-4 text-text-tertiary opacity-0 group-hover:opacity-100 transition-fast" />
                 </div>
-                <ArrowDownRight className="h-4 w-4 text-text-tertiary opacity-0 group-hover:opacity-100 transition-fast" />
+              ))
+            ) : (
+              <div className="px-6 py-8 text-center text-xs text-emerald-500 font-bold bg-emerald-500/5">
+                All systems nominal. No critical incidents detected.
               </div>
-            ))}
+            )}
           </div>
         </div>
 
@@ -293,13 +346,13 @@ export default function DashboardPage() {
           <div className="p-3 rounded-xl bg-bg-panel/50 border border-border-subtle">
              <div className="flex items-center justify-between mb-2">
                 <span className="text-[11px] font-bold text-text-tertiary">Server Load</span>
-                <span className="text-[11px] font-mono font-bold text-emerald-500">22%</span>
+                <span className="text-[11px] font-mono font-bold text-emerald-500">{(22 + healthFluctuation).toFixed(0)}%</span>
              </div>
              <div className="h-1.5 w-full bg-bg-sunken rounded-full overflow-hidden">
                 <motion.div 
                   initial={{ width: 0 }}
-                  animate={{ width: "22%" }}
-                  transition={{ duration: 1, delay: 0.5 }}
+                  animate={{ width: `${22 + healthFluctuation}%` }}
+                  transition={{ duration: 1, ease: "easeOut" }}
                   className="h-full bg-emerald-500" 
                 />
              </div>
@@ -308,24 +361,4 @@ export default function DashboardPage() {
       </div>
     </div>
   );
-}
-
-function ArrowDownRight(props: React.SVGProps<SVGSVGElement>) {
-  return (
-    <svg
-      {...props}
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="m7 7 10 10" />
-      <path d="M17 7v10H7" />
-    </svg>
-  )
 }

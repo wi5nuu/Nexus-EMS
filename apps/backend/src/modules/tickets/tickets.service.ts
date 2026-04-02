@@ -38,13 +38,31 @@ export class TicketsService {
   }
 
   async createTicket(reporterId: string, input: CreateTicketInput) {
+    let projectId = input.ticketProjectId;
+
+    if (!projectId) {
+      // Find or create a default internal project
+      const defaultProject = await prisma.ticketProject.findFirst({
+        where: { key: 'NEX' }
+      }) || await prisma.ticketProject.create({
+        data: {
+          organizationId: (await prisma.organization.findFirst())?.id || '', // Fallback to first org
+          key: 'NEX',
+          name: 'Vanguard Internal'
+        }
+      });
+      projectId = defaultProject.id;
+    }
+
     return prisma.ticket.create({
       data: {
         ...input,
+        ticketProjectId: projectId,
         reporterId,
       },
       include: {
         assignee: { select: { email: true } },
+        project: true,
       }
     });
   }
@@ -55,6 +73,19 @@ export class TicketsService {
       data: input,
       include: {
         assignee: { select: { email: true } },
+      }
+    });
+  }
+
+  async createComment(ticketId: string, userId: string, body: string) {
+    return prisma.ticketComment.create({
+      data: {
+        ticketId,
+        userId,
+        body,
+      },
+      include: {
+        user: { select: { email: true } }
       }
     });
   }

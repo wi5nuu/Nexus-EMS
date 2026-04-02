@@ -9,120 +9,91 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-// Enum types
-enum UserStatus {
-  ACTIVE
-  INACTIVE
-  SUSPENDED
-  PENDING
-}
-
-enum AuthProviderType {
-  PASSWORD
-  GOOGLE
-  AZURE_AD
-  SAML
-}
-
-// DOMAIN 1: IAM (Identity & Access Management)
-
 model Organization {
-  id        String    @id @default(uuid())
-  name      String
-  slug      String    @unique
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime  @updatedAt @map("updated_at")
-  deletedAt DateTime? @map("deleted_at")
-
-  users          User[]
-  roles          Role[]
-  departments    Department[]
-  ticketProjects TicketProject[]
-  dashboards     Dashboard[]
-
-  salaryBands       SalaryBand[]
-  payrollRuns       PayrollRun[]
-  leavePolicies     LeavePolicy[]
-  performanceCycles PerformanceCycle[]
+  id                String             @id @default(uuid())
+  name              String
+  slug              String             @unique
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  deletedAt         DateTime?          @map("deleted_at")
+  dashboards        Dashboard[]
+  departments       Department[]
   jobPostings       JobPosting[]
   kpiDefinitions    KpiDefinition[]
+  leavePolicies     LeavePolicy[]
+  payrollRuns       PayrollRun[]
+  performanceCycles PerformanceCycle[]
+  roles             Role[]
+  salaryBands       SalaryBand[]
   savedReports      SavedReport[]
+  ticketProjects    TicketProject[]
+  users             User[]
 
   @@map("organizations")
 }
 
 model User {
-  id             String     @id @default(uuid())
-  organizationId String     @map("organization_id")
-  email          String     @unique
-  passwordHash   String?    @map("password_hash")
-  firstName      String?    @map("first_name")
-  lastName       String?    @map("last_name")
-  status         UserStatus @default(PENDING)
-  createdAt      DateTime   @default(now()) @map("created_at")
-  updatedAt      DateTime   @updatedAt @map("updated_at")
-  deletedAt      DateTime?  @map("deleted_at")
-
-  organization   Organization    @relation(fields: [organizationId], references: [id])
-  roles          UserRole[]
-  sessions       Session[]
-  mfaCredentials MfaCredential[]
-  apiKeys        ApiKey[]
-  assignedTasks  TaskAssignee[]
-
-  // HR Relations
-  managedDepartments Department[]     @relation("DepartmentManager")
-  ledTeams           Team[]           @relation("TeamLead")
-  employeeProfile    EmployeeProfile?
-
-  // Ticket & Analytics Relations
-  reportedTickets Ticket[]        @relation("TicketReporter")
-  assignedTickets Ticket[]        @relation("TicketAssignee")
-  ticketComments  TicketComment[]
-
-  // HR Module Actions
+  id                  String              @id @default(uuid())
+  organizationId      String              @map("organization_id")
+  email               String              @unique
+  passwordHash        String?             @map("password_hash")
+  firstName           String?             @map("first_name")
+  lastName            String?             @map("last_name")
+  status              UserStatus          @default(PENDING)
+  createdAt           DateTime            @default(now()) @map("created_at")
+  updatedAt           DateTime            @updatedAt @map("updated_at")
+  deletedAt           DateTime?           @map("deleted_at")
+  apiKeys             ApiKey[]
+  managedDepartments  Department[]        @relation("DepartmentManager")
+  employeeProfile     EmployeeProfile?
   leaveReviewed       LeaveRequest[]
+  mfaCredentials      MfaCredential[]
   performanceReviewed PerformanceReview[]
+  sessions            Session[]
+  assignedTasks       TaskAssignee[]
+  ledTeams            Team[]              @relation("TeamLead")
+  ticketComments      TicketComment[]
+  assignedTickets     Ticket[]            @relation("TicketAssignee")
+  reportedTickets     Ticket[]            @relation("TicketReporter")
+  roles               UserRole[]
+  organization        Organization        @relation(fields: [organizationId], references: [id])
 
   @@index([organizationId])
   @@map("users")
 }
 
 model Role {
-  id             String   @id @default(uuid())
-  organizationId String?  @map("organization_id")
+  id             String           @id @default(uuid())
+  organizationId String?          @map("organization_id")
   name           String
   description    String?
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  organization Organization?    @relation(fields: [organizationId], references: [id])
-  permissions  RolePermission[]
-  users        UserRole[]
+  createdAt      DateTime         @default(now()) @map("created_at")
+  updatedAt      DateTime         @updatedAt @map("updated_at")
+  permissions    RolePermission[]
+  organization   Organization?    @relation(fields: [organizationId], references: [id])
+  users          UserRole[]
 
   @@index([organizationId])
   @@map("roles")
 }
 
 model Permission {
-  id          String   @id @default(uuid())
+  id          String           @id @default(uuid())
   resource    String
   action      String
   description String?
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  roles RolePermission[]
+  createdAt   DateTime         @default(now()) @map("created_at")
+  roles       RolePermission[]
 
   @@unique([resource, action])
   @@map("permissions")
 }
 
 model RolePermission {
-  roleId       String @map("role_id")
-  permissionId String @map("permission_id")
-
-  role       Role       @relation(fields: [roleId], references: [id])
-  permission Permission @relation(fields: [permissionId], references: [id])
+  roleId       String     @map("role_id")
+  permissionId String     @map("permission_id")
+  permission   Permission @relation(fields: [permissionId], references: [id])
+  role         Role       @relation(fields: [roleId], references: [id])
 
   @@id([roleId, permissionId])
   @@map("role_permissions")
@@ -132,9 +103,8 @@ model UserRole {
   userId    String    @map("user_id")
   roleId    String    @map("role_id")
   expiresAt DateTime? @map("expires_at")
-
-  user User @relation(fields: [userId], references: [id])
-  role Role @relation(fields: [roleId], references: [id])
+  role      Role      @relation(fields: [roleId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
 
   @@id([userId, roleId])
   @@map("user_roles")
@@ -148,8 +118,7 @@ model Session {
   ipAddress String?  @map("ip_address")
   expiresAt DateTime @map("expires_at")
   createdAt DateTime @default(now()) @map("created_at")
-
-  user User @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@map("sessions")
@@ -162,8 +131,7 @@ model MfaCredential {
   secret    String
   verified  Boolean  @default(false)
   createdAt DateTime @default(now()) @map("created_at")
-
-  user User @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@map("mfa_credentials")
@@ -176,8 +144,7 @@ model ApiKey {
   name      String?
   expiresAt DateTime? @map("expires_at")
   createdAt DateTime  @default(now()) @map("created_at")
-
-  user User @relation(fields: [userId], references: [id])
+  user      User      @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@map("api_keys")
@@ -199,8 +166,6 @@ model AuditLog {
   @@map("audit_logs")
 }
 
-// DOMAIN 2: PROJECT & TASK MANAGEMENT
-
 model Workspace {
   id             String    @id @default(uuid())
   organizationId String    @map("organization_id")
@@ -209,35 +174,27 @@ model Workspace {
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
   deletedAt      DateTime? @map("deleted_at")
-
-  projects Project[]
-  labels   Label[]
+  labels         Label[]
+  projects       Project[]
 
   @@index([organizationId])
   @@map("workspaces")
 }
 
 model Project {
-  id          String   @id @default(uuid())
-  workspaceId String   @map("workspace_id")
+  id          String    @id @default(uuid())
+  workspaceId String    @map("workspace_id")
   name        String
-  key         String   @unique
+  key         String    @unique
   settings    Json?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-  tasks     Task[]
-  sprints   Sprint[]
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+  sprints     Sprint[]
+  tasks       Task[]
 
   @@index([workspaceId])
   @@map("projects")
-}
-
-enum SprintStatus {
-  PLANNED
-  ACTIVE
-  COMPLETED
 }
 
 model Sprint {
@@ -249,12 +206,446 @@ model Sprint {
   endDate   DateTime     @map("end_date")
   capacity  Int?
   status    SprintStatus @default(PLANNED)
-
-  project Project @relation(fields: [projectId], references: [id])
-  tasks   Task[]
+  project   Project      @relation(fields: [projectId], references: [id])
+  tasks     Task[]
 
   @@index([projectId])
   @@map("sprints")
+}
+
+model Task {
+  id          String         @id @default(uuid())
+  projectId   String         @map("project_id")
+  sprintId    String?        @map("sprint_id")
+  title       String
+  description String?
+  status      TaskStatus     @default(TODO)
+  priority    TaskPriority   @default(MEDIUM)
+  storyPoints Int?           @map("story_points")
+  order       Float          @default(0)
+  reporterId  String         @map("reporter_id")
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+  assignees   TaskAssignee[]
+  project     Project        @relation(fields: [projectId], references: [id])
+  sprint      Sprint?        @relation(fields: [sprintId], references: [id])
+
+  @@index([projectId])
+  @@index([sprintId])
+  @@map("tasks")
+}
+
+model TaskAssignee {
+  taskId String @map("task_id")
+  userId String @map("user_id")
+  task   Task   @relation(fields: [taskId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@id([taskId, userId])
+  @@map("task_assignees")
+}
+
+model Label {
+  id          String    @id @default(uuid())
+  workspaceId String    @map("workspace_id")
+  name        String
+  color       String
+  workspace   Workspace @relation(fields: [workspaceId], references: [id])
+
+  @@index([workspaceId])
+  @@map("labels")
+}
+
+model Department {
+  id             String            @id @default(uuid())
+  organizationId String            @map("organization_id")
+  name           String
+  description    String?
+  managerId      String?           @map("manager_id")
+  createdAt      DateTime          @default(now()) @map("created_at")
+  updatedAt      DateTime          @updatedAt @map("updated_at")
+  manager        User?             @relation("DepartmentManager", fields: [managerId], references: [id])
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+  employees      EmployeeProfile[]
+  teams          Team[]
+
+  @@index([organizationId])
+  @@map("departments")
+}
+
+model Team {
+  id           String            @id @default(uuid())
+  departmentId String            @map("department_id")
+  name         String
+  leadId       String?           @map("lead_id")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  employees    EmployeeProfile[]
+  department   Department        @relation(fields: [departmentId], references: [id])
+  lead         User?             @relation("TeamLead", fields: [leadId], references: [id])
+
+  @@index([departmentId])
+  @@map("teams")
+}
+
+model EmployeeProfile {
+  userId           String               @id @map("user_id")
+  departmentId     String?              @map("department_id")
+  teamId           String?              @map("team_id")
+  jobTitle         String?              @map("job_title")
+  joinDate         DateTime?            @map("join_date")
+  imageUrl         String?              @map("image_url")
+  phoneNumber      String?              @map("phone_number")
+  officeLocation   String?              @map("office_location")
+  githubHandle     String?              @map("github_handle")
+  awsHandle        String?              @map("aws_handle")
+  slackHandle      String?              @map("slack_handle")
+  emergencyContact Json?                @map("emergency_contact")
+  attendances      AttendanceRecord[]
+  department       Department?          @relation(fields: [departmentId], references: [id])
+  team             Team?                @relation(fields: [teamId], references: [id])
+  user             User                 @relation(fields: [userId], references: [id])
+  contracts        EmploymentContract[]
+  enrollments      LearningEnrollment[]
+  leaveBalances    LeaveBalance[]
+  leaveRequests    LeaveRequest[]
+  goals            PerformanceGoal[]
+  reviews          PerformanceReview[]
+
+  @@map("employee_profiles")
+}
+
+model EmploymentContract {
+  id           String          @id @default(uuid())
+  employeeId   String          @map("employee_id")
+  type         String
+  startDate    DateTime        @map("start_date")
+  endDate      DateTime?       @map("end_date")
+  salaryBandId String?         @map("salary_band_id")
+  salaryAmount Decimal         @map("salary_amount") @db.Decimal(12, 2)
+  status       String          @default("ACTIVE")
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  employee     EmployeeProfile @relation(fields: [employeeId], references: [userId])
+  salaryBand   SalaryBand?     @relation(fields: [salaryBandId], references: [id])
+
+  @@map("employment_contracts")
+}
+
+model SalaryBand {
+  id             String               @id @default(uuid())
+  organizationId String               @map("organization_id")
+  level          String
+  minSalary      Decimal              @map("min_salary") @db.Decimal(12, 2)
+  maxSalary      Decimal              @map("max_salary") @db.Decimal(12, 2)
+  createdAt      DateTime             @default(now()) @map("created_at")
+  contracts      EmploymentContract[]
+  organization   Organization         @relation(fields: [organizationId], references: [id])
+
+  @@map("salary_bands")
+}
+
+model PayrollRun {
+  id             String        @id @default(uuid())
+  organizationId String        @map("organization_id")
+  periodStart    DateTime      @map("period_start")
+  periodEnd      DateTime      @map("period_end")
+  status         String        @default("DRAFT")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  items          PayrollItem[]
+  organization   Organization  @relation(fields: [organizationId], references: [id])
+
+  @@map("payroll_runs")
+}
+
+model PayrollItem {
+  id           String     @id @default(uuid())
+  payrollRunId String     @map("payroll_run_id")
+  employeeId   String     @map("employee_id")
+  amount       Decimal    @map("amount") @db.Decimal(12, 2)
+  type         String
+  description  String?
+  payrollRun   PayrollRun @relation(fields: [payrollRunId], references: [id])
+
+  @@map("payroll_items")
+}
+
+model LeavePolicy {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  name           String
+  type           String
+  description    String?
+  allowanceDays  Int          @map("allowance_days")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("leave_policies")
+}
+
+model LeaveBalance {
+  id         String          @id @default(uuid())
+  employeeId String          @map("employee_id")
+  type       String
+  accrued    Int
+  used       Int
+  pending    Int
+  employee   EmployeeProfile @relation(fields: [employeeId], references: [userId])
+
+  @@map("leave_balances")
+}
+
+model LeaveRequest {
+  id         String          @id @default(uuid())
+  employeeId String          @map("employee_id")
+  type       String
+  startDate  DateTime        @map("start_date")
+  endDate    DateTime        @map("end_date")
+  reason     String?
+  status     String          @default("PENDING")
+  reviewerId String?         @map("reviewer_id")
+  createdAt  DateTime        @default(now()) @map("created_at")
+  employee   EmployeeProfile @relation(fields: [employeeId], references: [userId])
+  reviewer   User?           @relation(fields: [reviewerId], references: [id])
+
+  @@map("leave_requests")
+}
+
+model AttendanceRecord {
+  id         String          @id @default(uuid())
+  employeeId String          @map("employee_id")
+  clockIn    DateTime        @map("clock_in")
+  clockOut   DateTime?       @map("clock_out")
+  location   Json?
+  device     String?
+  employee   EmployeeProfile @relation(fields: [employeeId], references: [userId])
+
+  @@map("attendance_records")
+}
+
+model PerformanceCycle {
+  id             String              @id @default(uuid())
+  organizationId String              @map("organization_id")
+  name           String
+  startDate      DateTime            @map("start_date")
+  endDate        DateTime            @map("end_date")
+  status         String              @default("ACTIVE")
+  organization   Organization        @relation(fields: [organizationId], references: [id])
+  reviews        PerformanceReview[]
+
+  @@map("performance_cycles")
+}
+
+model PerformanceReview {
+  id         String           @id @default(uuid())
+  cycleId    String           @map("cycle_id")
+  employeeId String           @map("employee_id")
+  reviewerId String           @map("reviewer_id")
+  rating     Int?
+  feedback   String?
+  status     String           @default("PENDING")
+  cycle      PerformanceCycle @relation(fields: [cycleId], references: [id])
+  employee   EmployeeProfile  @relation(fields: [employeeId], references: [userId])
+  reviewer   User             @relation(fields: [reviewerId], references: [id])
+
+  @@map("performance_reviews")
+}
+
+model PerformanceGoal {
+  id         String          @id @default(uuid())
+  employeeId String          @map("employee_id")
+  title      String
+  target     String
+  progress   Int             @default(0)
+  status     String          @default("ACTIVE")
+  createdAt  DateTime        @default(now()) @map("created_at")
+  employee   EmployeeProfile @relation(fields: [employeeId], references: [userId])
+
+  @@map("performance_goals")
+}
+
+model JobPosting {
+  id             String           @id @default(uuid())
+  organizationId String           @map("organization_id")
+  title          String
+  departmentId   String           @map("department_id")
+  description    String
+  status         String           @default("DRAFT")
+  createdAt      DateTime         @default(now()) @map("created_at")
+  applications   JobApplication[]
+  organization   Organization     @relation(fields: [organizationId], references: [id])
+
+  @@map("job_postings")
+}
+
+model JobApplication {
+  id           String     @id @default(uuid())
+  jobPostingId String     @map("job_posting_id")
+  candidateId  String     @map("candidate_id")
+  status       String     @default("APPLIED")
+  resumeUrl    String?    @map("resume_url")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  candidate    Candidate  @relation(fields: [candidateId], references: [id])
+  jobPosting   JobPosting @relation(fields: [jobPostingId], references: [id])
+
+  @@map("job_applications")
+}
+
+model Candidate {
+  id           String           @id @default(uuid())
+  name         String
+  email        String           @unique
+  phone        String?
+  createdAt    DateTime         @default(now()) @map("created_at")
+  applications JobApplication[]
+
+  @@map("candidates")
+}
+
+model LearningCourse {
+  id          String               @id @default(uuid())
+  title       String
+  description String?
+  provider    String?
+  createdAt   DateTime             @default(now()) @map("created_at")
+  enrollments LearningEnrollment[]
+
+  @@map("learning_courses")
+}
+
+model LearningEnrollment {
+  id          String          @id @default(uuid())
+  employeeId  String          @map("employee_id")
+  courseId    String          @map("course_id")
+  status      String          @default("ENROLLED")
+  completedAt DateTime?       @map("completed_at")
+  course      LearningCourse  @relation(fields: [courseId], references: [id])
+  employee    EmployeeProfile @relation(fields: [employeeId], references: [userId])
+
+  @@map("learning_enrollments")
+}
+
+model TicketProject {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  name           String
+  key            String       @unique
+  createdAt      DateTime     @default(now()) @map("created_at")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  tickets        Ticket[]
+
+  @@index([organizationId])
+  @@map("ticket_projects")
+}
+
+model Ticket {
+  id              String          @id @default(uuid())
+  ticketProjectId String          @map("ticket_project_id")
+  title           String
+  description     String?
+  status          TicketStatus    @default(OPEN)
+  priority        TicketPriority  @default(MEDIUM)
+  reporterId      String          @map("reporter_id")
+  assigneeId      String?         @map("assignee_id")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+  comments        TicketComment[]
+  assignee        User?           @relation("TicketAssignee", fields: [assigneeId], references: [id])
+  reporter        User            @relation("TicketReporter", fields: [reporterId], references: [id])
+  project         TicketProject   @relation(fields: [ticketProjectId], references: [id])
+
+  @@index([ticketProjectId])
+  @@map("tickets")
+}
+
+model TicketComment {
+  id        String   @id @default(uuid())
+  ticketId  String   @map("ticket_id")
+  userId    String   @map("user_id")
+  body      String
+  createdAt DateTime @default(now()) @map("created_at")
+  ticket    Ticket   @relation(fields: [ticketId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@index([ticketId])
+  @@map("ticket_comments")
+}
+
+model Dashboard {
+  id             String            @id @default(uuid())
+  organizationId String            @map("organization_id")
+  name           String
+  layout         Json?
+  createdAt      DateTime          @default(now()) @map("created_at")
+  widgets        DashboardWidget[]
+  organization   Organization      @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId])
+  @@map("dashboards")
+}
+
+model DashboardWidget {
+  id          String    @id @default(uuid())
+  dashboardId String    @map("dashboard_id")
+  type        String
+  config      Json?
+  position    Json?
+  dashboard   Dashboard @relation(fields: [dashboardId], references: [id])
+
+  @@map("dashboard_widgets")
+}
+
+model KpiDefinition {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  name           String
+  formula        String?
+  target         Float?
+  createdAt      DateTime     @default(now()) @map("created_at")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("kpi_definitions")
+}
+
+model MetricSnapshot {
+  id        String   @id @default(uuid())
+  name      String
+  value     Float
+  timestamp DateTime @default(now())
+  tags      Json?
+
+  @@index([timestamp])
+  @@map("metric_snapshots")
+}
+
+model SavedReport {
+  id             String       @id @default(uuid())
+  organizationId String       @map("organization_id")
+  name           String
+  config         Json?
+  createdAt      DateTime     @default(now()) @map("created_at")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@map("saved_reports")
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  PENDING
+}
+
+enum AuthProviderType {
+  PASSWORD
+  GOOGLE
+  AZURE_AD
+  SAML
+}
+
+enum SprintStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
 }
 
 enum TaskStatus {
@@ -272,358 +663,6 @@ enum TaskPriority {
   URGENT
 }
 
-model Task {
-  id          String       @id @default(uuid())
-  projectId   String       @map("project_id")
-  sprintId    String?      @map("sprint_id")
-  title       String
-  description String?      @db.Text
-  status      TaskStatus   @default(TODO)
-  priority    TaskPriority @default(MEDIUM)
-  storyPoints Int?         @map("story_points")
-  order       Float        @default(0)
-  reporterId  String       @map("reporter_id")
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
-
-  project   Project        @relation(fields: [projectId], references: [id])
-  sprint    Sprint?        @relation(fields: [sprintId], references: [id])
-  assignees TaskAssignee[]
-
-  @@index([projectId])
-  @@index([sprintId])
-  @@map("tasks")
-}
-
-model TaskAssignee {
-  taskId String @map("task_id")
-  userId String @map("user_id")
-
-  task Task @relation(fields: [taskId], references: [id])
-  user User @relation(fields: [userId], references: [id])
-
-  @@id([taskId, userId])
-  @@map("task_assignees")
-}
-
-model Label {
-  id          String @id @default(uuid())
-  workspaceId String @map("workspace_id")
-  name        String
-  color       String
-
-  workspace Workspace @relation(fields: [workspaceId], references: [id])
-
-  @@index([workspaceId])
-  @@map("labels")
-}
-
-// DOMAIN 3: HR & PEOPLE
-
-model Department {
-  id             String   @id @default(uuid())
-  organizationId String   @map("organization_id")
-  name           String
-  description    String?
-  managerId      String?  @map("manager_id")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
-
-  organization Organization      @relation(fields: [organizationId], references: [id])
-  manager      User?             @relation("DepartmentManager", fields: [managerId], references: [id])
-  teams        Team[]
-  employees    EmployeeProfile[]
-
-  @@index([organizationId])
-  @@map("departments")
-}
-
-model Team {
-  id           String   @id @default(uuid())
-  departmentId String   @map("department_id")
-  name         String
-  leadId       String?  @map("lead_id")
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  department Department        @relation(fields: [departmentId], references: [id])
-  lead       User?             @relation("TeamLead", fields: [leadId], references: [id])
-  employees  EmployeeProfile[]
-
-  @@index([departmentId])
-  @@map("teams")
-}
-
-model EmployeeProfile {
-  userId           String    @id @map("user_id")
-  departmentId     String?   @map("department_id")
-  teamId           String?   @map("team_id")
-  jobTitle         String?   @map("job_title")
-  joinDate         DateTime? @map("join_date")
-  imageUrl         String?   @map("image_url")
-  phoneNumber      String?   @map("phone_number")
-  officeLocation   String?   @map("office_location")
-  githubHandle     String?   @map("github_handle")
-  awsHandle        String?   @map("aws_handle")
-  slackHandle      String?   @map("slack_handle")
-  emergencyContact Json?     @map("emergency_contact")
-
-  user       User        @relation(fields: [userId], references: [id])
-  department Department? @relation(fields: [departmentId], references: [id])
-  team       Team?       @relation(fields: [teamId], references: [id])
-
-  contracts      EmploymentContract[]
-  leaveBalances  LeaveBalance[]
-  leaveRequests  LeaveRequest[]
-  attendances    AttendanceRecord[]
-  reviews        PerformanceReview[]
-  goals          PerformanceGoal[]
-  enrollments    LearningEnrollment[]
-
-  @@map("employee_profiles")
-}
-
-model EmploymentContract {
-  id               String    @id @default(uuid())
-  employeeId       String    @map("employee_id")
-  type             String
-  startDate        DateTime  @map("start_date")
-  endDate          DateTime? @map("end_date")
-  salaryBandId     String?   @map("salary_band_id")
-  salaryAmount     Decimal   @map("salary_amount") @db.Decimal(12, 2)
-  status           String    @default("ACTIVE")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @updatedAt @map("updated_at")
-
-  employee   EmployeeProfile @relation(fields: [employeeId], references: [userId])
-  salaryBand SalaryBand?     @relation(fields: [salaryBandId], references: [id])
-
-  @@map("employment_contracts")
-}
-
-model SalaryBand {
-  id             String   @id @default(uuid())
-  organizationId String   @map("organization_id")
-  level          String
-  minSalary      Decimal  @map("min_salary") @db.Decimal(12, 2)
-  maxSalary      Decimal  @map("max_salary") @db.Decimal(12, 2)
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  organization Organization         @relation(fields: [organizationId], references: [id])
-  contracts    EmploymentContract[]
-
-  @@map("salary_bands")
-}
-
-model PayrollRun {
-  id             String   @id @default(uuid())
-  organizationId String   @map("organization_id")
-  periodStart    DateTime @map("period_start")
-  periodEnd      DateTime @map("period_end")
-  status         String   @default("DRAFT")
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  organization Organization  @relation(fields: [organizationId], references: [id])
-  items        PayrollItem[]
-
-  @@map("payroll_runs")
-}
-
-model PayrollItem {
-  id           String  @id @default(uuid())
-  payrollRunId String  @map("payroll_run_id")
-  employeeId   String  @map("employee_id")
-  amount       Decimal @map("amount") @db.Decimal(12, 2)
-  type         String
-  description  String?
-
-  payrollRun PayrollRun @relation(fields: [payrollRunId], references: [id])
-
-  @@map("payroll_items")
-}
-
-model LeavePolicy {
-  id             String   @id @default(uuid())
-  organizationId String   @map("organization_id")
-  name           String
-  type           String
-  description    String?
-  allowanceDays  Int      @map("allowance_days")
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  organization Organization @relation(fields: [organizationId], references: [id])
-
-  @@map("leave_policies")
-}
-
-model LeaveBalance {
-  id         String @id @default(uuid())
-  employeeId String @map("employee_id")
-  type       String
-  accrued    Int
-  used       Int
-  pending    Int
-
-  employee EmployeeProfile @relation(fields: [employeeId], references: [userId])
-
-  @@map("leave_balances")
-}
-
-model LeaveRequest {
-  id         String   @id @default(uuid())
-  employeeId String   @map("employee_id")
-  type       String
-  startDate  DateTime @map("start_date")
-  endDate    DateTime @map("end_date")
-  reason     String?
-  status     String   @default("PENDING")
-  reviewerId String?  @map("reviewer_id")
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  employee EmployeeProfile @relation(fields: [employeeId], references: [userId])
-  reviewer User?           @relation(fields: [reviewerId], references: [id])
-
-  @@map("leave_requests")
-}
-
-model AttendanceRecord {
-  id         String    @id @default(uuid())
-  employeeId String    @map("employee_id")
-  clockIn    DateTime  @map("clock_in")
-  clockOut   DateTime? @map("clock_out")
-  location   Json?
-  device     String?
-
-  employee EmployeeProfile @relation(fields: [employeeId], references: [userId])
-
-  @@map("attendance_records")
-}
-
-model PerformanceCycle {
-  id             String   @id @default(uuid())
-  organizationId String   @map("organization_id")
-  name           String
-  startDate      DateTime @map("start_date")
-  endDate        DateTime @map("end_date")
-  status         String   @default("ACTIVE")
-
-  organization Organization        @relation(fields: [organizationId], references: [id])
-  reviews      PerformanceReview[]
-
-  @@map("performance_cycles")
-}
-
-model PerformanceReview {
-  id        String   @id @default(uuid())
-  cycleId   String   @map("cycle_id")
-  employeeId String   @map("employee_id")
-  reviewerId String   @map("reviewer_id")
-  rating    Int?
-  feedback  String?  @db.Text
-  status    String   @default("PENDING")
-
-  cycle    PerformanceCycle @relation(fields: [cycleId], references: [id])
-  employee EmployeeProfile  @relation(fields: [employeeId], references: [userId])
-  reviewer User             @relation(fields: [reviewerId], references: [id])
-
-  @@map("performance_reviews")
-}
-
-model PerformanceGoal {
-  id         String   @id @default(uuid())
-  employeeId String   @map("employee_id")
-  title      String
-  target     String
-  progress   Int      @default(0)
-  status     String   @default("ACTIVE")
-  createdAt  DateTime @default(now()) @map("created_at")
-
-  employee EmployeeProfile @relation(fields: [employeeId], references: [userId])
-
-  @@map("performance_goals")
-}
-
-model JobPosting {
-  id             String   @id @default(uuid())
-  organizationId String   @map("organization_id")
-  title          String
-  departmentId   String   @map("department_id")
-  description    String   @db.Text
-  status         String   @default("DRAFT")
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  organization Organization     @relation(fields: [organizationId], references: [id])
-  applications JobApplication[]
-
-  @@map("job_postings")
-}
-
-model JobApplication {
-  id           String   @id @default(uuid())
-  jobPostingId String   @map("job_posting_id")
-  candidateId  String   @map("candidate_id")
-  status       String   @default("APPLIED")
-  resumeUrl    String?  @map("resume_url")
-  createdAt    DateTime @default(now()) @map("created_at")
-
-  jobPosting JobPosting @relation(fields: [jobPostingId], references: [id])
-  candidate  Candidate  @relation(fields: [candidateId], references: [id])
-
-  @@map("job_applications")
-}
-
-model Candidate {
-  id        String   @id @default(uuid())
-  name      String
-  email     String   @unique
-  phone     String?
-  createdAt DateTime @default(now()) @map("created_at")
-
-  applications JobApplication[]
-
-  @@map("candidates")
-}
-
-model LearningCourse {
-  id          String   @id @default(uuid())
-  title       String
-  description String?  @db.Text
-  provider    String?
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  enrollments LearningEnrollment[]
-
-  @@map("learning_courses")
-}
-
-model LearningEnrollment {
-  id        String    @id @default(uuid())
-  employeeId String    @map("employee_id")
-  courseId  String    @map("course_id")
-  status    String    @default("ENROLLED")
-  completedAt DateTime? @map("completed_at")
-
-  employee EmployeeProfile @relation(fields: [employeeId], references: [userId])
-  course   LearningCourse  @relation(fields: [courseId], references: [id])
-
-  @@map("learning_enrollments")
-}
-
-// DOMAIN 4: TICKET / ISSUE TRACKER
-
-model TicketProject {
-  id             String   @id @default(uuid())
-  organizationId String   @map("organization_id")
-  name           String
-  key            String   @unique
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  organization Organization @relation(fields: [organizationId], references: [id])
-  tickets      Ticket[]
-
-  @@index([organizationId])
-  @@map("ticket_projects")
-}
-
 enum TicketStatus {
   OPEN
   TRIAGED
@@ -637,103 +676,4 @@ enum TicketPriority {
   MEDIUM
   HIGH
   CRITICAL
-}
-
-model Ticket {
-  id              String         @id @default(uuid())
-  ticketProjectId String         @map("ticket_project_id")
-  title           String
-  description     String?        @db.Text
-  status          TicketStatus   @default(OPEN)
-  priority        TicketPriority @default(MEDIUM)
-  reporterId      String         @map("reporter_id")
-  assigneeId      String?        @map("assignee_id")
-  createdAt       DateTime       @default(now()) @map("created_at")
-  updatedAt       DateTime       @updatedAt @map("updated_at")
-
-  project  TicketProject   @relation(fields: [ticketProjectId], references: [id])
-  reporter User            @relation("TicketReporter", fields: [reporterId], references: [id])
-  assignee User?           @relation("TicketAssignee", fields: [assigneeId], references: [id])
-  comments TicketComment[]
-
-  @@index([ticketProjectId])
-  @@map("tickets")
-}
-
-model TicketComment {
-  id        String   @id @default(uuid())
-  ticketId  String   @map("ticket_id")
-  userId    String   @map("user_id")
-  body      String   @db.Text
-  createdAt DateTime @default(now()) @map("created_at")
-
-  ticket Ticket @relation(fields: [ticketId], references: [id])
-  user   User   @relation(fields: [userId], references: [id])
-
-  @@index([ticketId])
-  @@map("ticket_comments")
-}
-
-// DOMAIN 5: ANALYTICS & REPORTING
-
-model Dashboard {
-  id             String   @id @default(uuid())
-  organizationId String   @map("organization_id")
-  name           String
-  layout         Json?
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  organization Organization      @relation(fields: [organizationId], references: [id])
-  widgets      DashboardWidget[]
-
-  @@index([organizationId])
-  @@map("dashboards")
-}
-
-model DashboardWidget {
-  id          String @id @default(uuid())
-  dashboardId String @map("dashboard_id")
-  type        String
-  config      Json?
-  position    Json?
-
-  dashboard Dashboard @relation(fields: [dashboardId], references: [id])
-
-  @@map("dashboard_widgets")
-}
-
-model KpiDefinition {
-  id             String   @id @default(uuid())
-  organizationId String   @map("organization_id")
-  name           String
-  formula        String?
-  target         Float?
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  organization Organization @relation(fields: [organizationId], references: [id])
-
-  @@map("kpi_definitions")
-}
-
-model MetricSnapshot {
-  id        String   @id @default(uuid())
-  name      String
-  value     Float
-  timestamp DateTime @default(now())
-  tags      Json?
-
-  @@index([timestamp])
-  @@map("metric_snapshots")
-}
-
-model SavedReport {
-  id             String   @id @default(uuid())
-  organizationId String   @map("organization_id")
-  name           String
-  config         Json?
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  organization Organization @relation(fields: [organizationId], references: [id])
-
-  @@map("saved_reports")
 }

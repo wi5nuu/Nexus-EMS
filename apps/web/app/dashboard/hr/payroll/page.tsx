@@ -5,10 +5,15 @@ import {
   TrendingUp,
   PieChart,
   CreditCard,
-  ShieldCheck
+  ShieldCheck,
+  Settings,
+  FileText
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { toast } from "sonner";
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 
 import { cn } from "@/lib/utils";
 
@@ -28,6 +33,38 @@ const payslips = [
 ];
 
 export default function PayrollPage() {
+  const [bankingOpen, setBankingOpen] = useState(false);
+
+  const handleExportTax = () => {
+    const data = [
+      ["Form ID", "Year", "Type", "Status"],
+      ["TX-2025-01", "2025", "Annual", "Ready"],
+      ["TX-2024-Q4", "2024", "Quarterly", "Ready"]
+    ];
+    const csv = data.map(r => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "Vanguard_tax_forms.csv";
+    a.click();
+    toast.success("Tax forms exported successfully.");
+  };
+
+  const handleExportPayslips = () => {
+    const csv = [
+      ["Period", "Date", "Amount", "Status"],
+      ...payslips.map(p => [p.period, p.date, p.amount, p.status])
+    ].map(r => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "Vanguard_payslip_history.csv";
+    a.click();
+    toast.success("Payslip history exported.");
+  };
+
   return (
     <div className="space-y-4 sm:space-y-6 px-4 sm:px-0 py-4 sm:py-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
@@ -39,13 +76,13 @@ export default function PayrollPage() {
           <Button 
             variant="outline" 
             className="flex-1 sm:flex-none h-8 px-2.5 border-border-default bg-bg-surface hover:bg-bg-elevated text-text-secondary hover:text-text-primary text-[11px] sm:text-xs font-medium transition-fast"
-            onClick={() => alert("Downloading all available tax documents...")}
+            onClick={handleExportTax}
           >
             <Download className="h-3.5 w-3.5 mr-1.5" /> Tax Forms
           </Button>
           <Button 
             className="flex-1 sm:flex-none h-8 px-3 bg-brand-default hover:bg-brand-hover text-white text-[11px] sm:text-xs font-bold transition-fast shadow-brand"
-            onClick={() => alert("Redirecting to banking partner setup...")}
+            onClick={() => setBankingOpen(true)}
           >
             Configure Banking
           </Button>
@@ -129,7 +166,12 @@ export default function PayrollPage() {
               <h3 className="font-syne font-bold text-xs sm:text-[13px] text-text-primary">Payslip History</h3>
               <p className="text-[10px] sm:text-xs text-text-tertiary mt-0.5">Access and download your historical payslips.</p>
             </div>
-            <Button variant="ghost" size="sm" className="h-6 px-2 text-[9px] sm:text-[10px] font-bold text-brand-text/90 hover:text-brand-text hover:bg-bg-elevated transition-colors">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleExportPayslips}
+              className="h-6 px-2 text-[9px] sm:text-[10px] font-bold text-brand-text/90 hover:text-brand-text hover:bg-bg-elevated transition-colors"
+            >
               EXPORT CSV
             </Button>
           </div>
@@ -166,11 +208,42 @@ export default function PayrollPage() {
         <div className="space-y-1">
           <p className="text-[11px] sm:text-xs font-bold font-syne text-text-primary">Secure Financial Endpoint</p>
           <p className="text-[10px] sm:text-[11px] text-text-secondary font-dmsans leading-relaxed">
-            Personal financial data is encrypted at rest and in transit. Access is monitored as per Nexus Security Policy §14. 
+            Personal financial data is encrypted at rest and in transit. Access is monitored as per Vanguard Security Policy §14. 
             Remember to never share your password or security tokens.
           </p>
         </div>
       </div>
+
+      <Dialog open={bankingOpen} onOpenChange={setBankingOpen}>
+        <DialogContent className="sm:max-w-[420px] bg-bg-surface border-border-default">
+          <DialogHeader>
+            <DialogTitle className="font-syne font-bold text-text-primary flex items-center gap-2">
+              <Settings className="h-4 w-4 text-brand-text" /> Banking Configuration
+            </DialogTitle>
+            <DialogDescription className="text-text-tertiary text-xs">
+              Vanguard Hub uses Plaid for secure banking integrations.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="p-4 rounded-xl border border-dashed border-border-strong bg-bg-panel flex flex-col items-center justify-center text-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-brand-muted flex items-center justify-center">
+                <CreditCard className="h-5 w-5 text-brand-text" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-text-primary">No bank account linked</p>
+                <p className="text-[10px] text-text-tertiary mt-0.5">Link your primary account for automated payroll.</p>
+              </div>
+              <Button size="sm" className="h-8 bg-brand-default hover:bg-brand-hover text-white text-[11px] font-bold" onClick={() => toast.loading("Connecting to Plaid...")}>
+                Connect Account
+              </Button>
+            </div>
+            <div className="flex items-start gap-2 text-[10px] text-text-tertiary bg-bg-sunken p-2.5 rounded-lg border border-border-subtle">
+              <ShieldCheck className="h-3.5 w-3.5 text-emerald-500 shrink-0 mt-0.5" />
+              <p>Bank details are never stored on Vanguard servers. We use 256-bit AES encryption via Plaid.</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

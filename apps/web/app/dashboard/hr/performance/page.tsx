@@ -8,6 +8,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Map, Briefcase, GraduationCap, Zap, TrendingUp } from "lucide-react";
+import { cn } from "@/lib/utils";
+
 
 const goalsData = [
   { id: "1", title: "Complete Q1 Project Alpha", progress: 85, target: "Apr 2026", status: "In Progress" },
@@ -21,6 +27,15 @@ const reviewHistory = [
 ];
 
 export default function PerformancePage() {
+  const [careerOpen, setCareerOpen] = useState(false);
+  const [goalOpen, setGoalOpen] = useState(false);
+  const [skillBeat, setSkillBeat] = useState(0);
+
+  useEffect(() => {
+    const itv = setInterval(() => setSkillBeat(Math.random() * 2), 2000);
+    return () => clearInterval(itv);
+  }, []);
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -31,14 +46,14 @@ export default function PerformancePage() {
         <div className="flex gap-2">
           <Button 
             variant="outline" 
-            className="border-border/50 text-foreground"
-            onClick={() => alert("Career growth trajectory visualizer...")}
+            className="border-border/50 text-foreground bg-bg-surface hover:bg-bg-elevated"
+            onClick={() => setCareerOpen(true)}
           >
-            View Career Path
+            <Map className="w-4 h-4 mr-2" /> View Career Path
           </Button>
           <Button 
-            className="bg-electric-violet hover:bg-electric-violet/90 text-white font-medium shadow-[0_0_15px_rgba(109,40,217,0.3)]"
-            onClick={() => alert("Personal goal setting modal...")}
+            className="bg-brand-default hover:bg-brand-hover text-white font-bold shadow-brand"
+            onClick={() => setGoalOpen(true)}
           >
             <Plus className="w-4 h-4 mr-2" /> New Goal
           </Button>
@@ -69,7 +84,10 @@ export default function PerformancePage() {
                     <span>{skill.value}%</span>
                   </div>
                   <div className="h-1 w-full bg-foreground/5 rounded-full overflow-hidden">
-                    <div className="h-full bg-electric-violet transition-all duration-1000" style={{ width: `${skill.value}%` }} />
+                    <div 
+                      className="h-full bg-brand-default transition-all duration-1000 ease-in-out" 
+                      style={{ width: `${skill.value + (i === 0 ? skillBeat : -skillBeat)}%` }} 
+                    />
                   </div>
                 </div>
               ))}
@@ -154,6 +172,75 @@ export default function PerformancePage() {
           </Card>
         </div>
       </div>
+      
+      {/* Career Path Dialog */}
+      <Dialog open={careerOpen} onOpenChange={setCareerOpen}>
+        <DialogContent className="sm:max-w-[550px] bg-bg-surface border-border-default">
+          <DialogHeader>
+            <DialogTitle className="font-syne flex items-center gap-2">
+              <Map className="h-5 w-5 text-brand-text" /> Career Path Trajectory
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-6 space-y-6">
+            {[
+              { level: "Principal Engineer", status: "Target", icon: Star, color: "text-amber-500", desc: "Strategic leadership and architecting global-scale infrastructure." },
+              { level: "Senior Staff Engineer", status: "Next", icon: TrendingUp, color: "text-brand-text", desc: "Expert technical guidance across multiple departments." },
+              { level: "Staff Engineer (Current)", status: "Current", icon: Zap, color: "text-emerald-500", desc: "High-impact individual contributor driving system excellence." }
+            ].map((path, i) => (
+              <div key={i} className="flex gap-4 group">
+                <div className="flex flex-col items-center">
+                  <div className={cn("h-10 w-10 rounded-full border-2 flex items-center justify-center shrink-0 bg-bg-sunken", path.color.replace('text', 'border'))}>
+                    <path.icon className={cn("h-5 w-5", path.color)} />
+                  </div>
+                  {i < 2 && <div className="w-0.5 h-full bg-border-subtle my-1" />}
+                </div>
+                <div className="pb-4">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-bold text-sm text-text-primary">{path.level}</h4>
+                    <span className="text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-bg-elevated border border-border-subtle text-text-tertiary">{path.status}</span>
+                  </div>
+                  <p className="text-xs text-text-secondary mt-1 leading-relaxed">{path.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Goal Dialog */}
+      <Dialog open={goalOpen} onOpenChange={setGoalOpen}>
+        <DialogContent className="sm:max-w-[420px] bg-bg-surface border-border-default">
+          <DialogHeader>
+            <DialogTitle className="font-syne">Set New Performance Goal</DialogTitle>
+            <DialogDescription className="text-xs">
+              Define a measurable objective for your next performance cycle.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Goal Title</label>
+              <input className="w-full h-9 bg-bg-sunken border border-border-subtle rounded-md px-3 text-sm focus:outline-none focus:border-brand-default" placeholder="e.g. Master Kafka Event Streams" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Target Date</label>
+                <input type="date" className="w-full h-9 bg-bg-sunken border border-border-subtle rounded-md px-3 text-sm" />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-text-tertiary uppercase tracking-widest">Priority</label>
+                <select className="w-full h-9 bg-bg-sunken border border-border-subtle rounded-md px-3 text-sm">
+                  <option>High</option>
+                  <option>Medium</option>
+                  <option>Low</option>
+                </select>
+              </div>
+            </div>
+            <Button className="w-full bg-brand-default hover:bg-brand-hover text-white font-bold mt-2" onClick={() => { setGoalOpen(false); toast.success("Goal saved successfully!"); }}>
+              Create Goal
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

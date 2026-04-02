@@ -3,6 +3,7 @@ import { Syne, DM_Sans, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { Providers } from "./providers";
+import Script from "next/script";
 
 const syne = Syne({
   subsets: ["latin"],
@@ -22,8 +23,8 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Nexus EMS | Enterprise Management System",
-  description: "World-class production-grade enterprise management platform by Nexus Corp.",
+  title: "Vanguard | Strategic Execution Hub",
+  description: "Next-generation production-grade enterprise management platform for high-performance teams.",
 };
 
 export default function RootLayout({
@@ -43,6 +44,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <Providers>
+            <Script src="https://accounts.google.com/gsi/client" strategy="beforeInteractive" />
             {children}
           </Providers>
         </ThemeProvider>

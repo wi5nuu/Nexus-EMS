@@ -1,6 +1,6 @@
 export function getAccessToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("nexus_access_token");
+  return localStorage.getItem("vanguard_access_token");
 }
 
 export interface User {
@@ -15,7 +15,7 @@ export interface User {
 
 export function getUser(): User | null {
   if (typeof window === "undefined") return null;
-  const raw = localStorage.getItem("nexus_user");
+  const raw = localStorage.getItem("vanguard_user");
   if (!raw) return null;
   try {
     return JSON.parse(raw) as User;
@@ -25,15 +25,15 @@ export function getUser(): User | null {
 }
 
 export function clearAuth() {
-  localStorage.removeItem("nexus_access_token");
-  localStorage.removeItem("nexus_refresh_token");
-  localStorage.removeItem("nexus_user");
+  localStorage.removeItem("vanguard_access_token");
+  localStorage.removeItem("vanguard_refresh_token");
+  localStorage.removeItem("vanguard_user");
 }
 
 export function updateUser(userData: Partial<User>) {
   if (typeof window === "undefined") return;
   const currentUser = getUser() || {} as User;
-  localStorage.setItem("nexus_user", JSON.stringify({ ...currentUser, ...userData }));
+  localStorage.setItem("vanguard_user", JSON.stringify({ ...currentUser, ...userData }));
 }
 
 export function isAuthenticated(): boolean {

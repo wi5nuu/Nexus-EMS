@@ -50,7 +50,7 @@ export default function NewProjectPage() {
             <div className="absolute top-0 right-0 w-48 h-48 bg-violet-600/5 blur-[100px] rounded-full pointer-events-none" />
             <CardHeader>
               <CardTitle className="font-syne text-lg">Project Identification</CardTitle>
-              <CardDescription className="font-dmsans text-[13px]">Register a new strategic initiative within Nexus Corp.</CardDescription>
+              <CardDescription className="font-dmsans text-[13px]">Register a new strategic initiative within Vanguard Corp.</CardDescription>
             </CardHeader>
             <CardContent>
               <form id="new-project-form" onSubmit={handleSubmit} className="space-y-6">
@@ -175,7 +175,7 @@ export default function NewProjectPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                  {[
-                   { icon: Target, title: "Objective Alignment", desc: "Ensure project goals match Nexus' strategic roadmap for Q3." },
+                   { icon: Target, title: "Objective Alignment", desc: "Ensure project goals match Vanguard' strategic roadmap for Q3." },
                    { icon: TrendingUp, title: "KPI Definition", desc: "Success metrics must be quantifiable and measurable." },
                    { icon: Layers, title: "Tech Stack Approval", desc: "All new libraries must be approved by the Infrastructure team." },
                  ].map((item, i) => (

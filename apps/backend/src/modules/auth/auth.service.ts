@@ -1,10 +1,69 @@
 import { PrismaClient } from '@prisma/client';
 import argon2 from 'argon2';
-import { LoginInput, UpdateProfileInput } from './auth.schema';
+import { OAuth2Client } from 'google-auth-library';
+import { LoginInput, UpdateProfileInput, GoogleLoginInput } from './auth.schema';
 
 const prisma = new PrismaClient();
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 export class AuthService {
+  async loginWithGoogle(input: GoogleLoginInput) {
+    const ticket = await googleClient.verifyIdToken({
+      idToken: input.idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    if (!payload || !payload.email) {
+      throw new Error('Invalid Google token');
+    }
+
+    const { email, given_name: firstName, family_name: lastName, picture } = payload;
+
+    // 1. Check if user exists
+    let user = await prisma.user.findUnique({
+      where: { email },
+      include: { organization: true },
+    });
+
+    // 2. If user doesn't exist, register them (Auto-Create Org)
+    if (!user) {
+      user = await prisma.$transaction(async (tx) => {
+        const orgName = `${firstName}'s Org`;
+        const orgSlug = `${orgName.toLowerCase().replace(/\s+/g, '-')}-${Math.floor(Math.random() * 1000)}`;
+        
+        const org = await tx.organization.create({
+          data: {
+            name: orgName,
+            slug: orgSlug,
+          }
+        });
+
+        // Create Workspace for the new Org
+        const workspace = await tx.workspace.create({
+          data: {
+            name: 'Main Workspace',
+            organizationId: org.id,
+            description: 'Your default engineering workspace',
+          }
+        });
+
+        return tx.user.create({
+          data: {
+            email,
+            firstName: firstName || 'User',
+            lastName: lastName || '',
+            organizationId: org.id,
+            status: 'ACTIVE',
+          },
+          include: { organization: true },
+        });
+      });
+    }
+
+    return user;
+  }
+
   async registerUser(input: any) {
     const existingUser = await prisma.user.findUnique({
       where: { email: input.email },

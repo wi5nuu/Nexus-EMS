@@ -18,6 +18,9 @@ import { ticketsRoutes } from './modules/tickets/tickets.routes';
 import { hrRoutes } from './modules/hr/hr.routes';
 import { analyticsRoutes } from './modules/analytics/analytics.routes';
 import { aiRoutes } from './modules/ai/ai.routes';
+import { auditRoutes } from './modules/audit/audit.routes';
+import { rbacRoutes } from './modules/rbac/rbac.routes';
+import { organizationRoutes } from './modules/organization/org.routes';
 
 
 
@@ -64,12 +67,13 @@ async function bootstrap() {
     await fastify.register(swagger, {
       openapi: {
         info: {
-          title: 'Nexus EMS API',
-          description: 'Enterprise Management System API Documentation',
+          title: 'Vanguard Strategic API',
+          description: 'Vanguard Strategic Execution Hub - Backend Services Documentation',
           version: '1.0.0',
         },
         servers: [
-          { url: 'http://localhost:8081' },
+          { url: 'http://localhost:8081', description: 'Local Development' },
+          { url: 'https://vanguard-api.up.railway.app', description: 'Production Hub' },
         ],
       },
       transform: jsonSchemaTransform,
@@ -92,6 +96,9 @@ async function bootstrap() {
     await fastify.register(hrRoutes, { prefix: '/api/v1/hr' });
     await fastify.register(analyticsRoutes, { prefix: '/api/v1/analytics' });
     await fastify.register(aiRoutes, { prefix: '/api/v1/ai' });
+    await fastify.register(auditRoutes, { prefix: '/api/v1/audit' });
+    await fastify.register(rbacRoutes, { prefix: '/api/v1/rbac' });
+    await fastify.register(organizationRoutes, { prefix: '/api/v1/organization' });
 
 
 
@@ -99,7 +106,7 @@ async function bootstrap() {
     // 6. Home Route
     fastify.get('/', async () => {
       return { 
-        name: 'Nexus EMS API', 
+        name: 'Vanguard Hub API', 
         status: 'LIVE', 
         docs: '/docs', 
         health: '/health' 
@@ -133,7 +140,7 @@ async function bootstrap() {
       fastify.log.error(`[Kafka] Initial connection failed: ${err.message}`);
     });
     
-    fastify.log.info(`Nexus EMS Backend listening on http://${host}:${port}`);
+    fastify.log.info(`Vanguard Hub Backend listening on http://${host}:${port}`);
     fastify.log.info(`API Documentation: http://${host}:${port}/docs`);
   } catch (err) {
     fastify.log.error(err);

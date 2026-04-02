@@ -38,7 +38,7 @@ async function fetchProjects(): Promise<Project[]> {
   return [
     {
       id: "proj-1",
-      name: "Nexus Platform v3",
+      name: "Vanguard Platform v3",
       key: "NEX",
       description: "Core platform rebuild with microservices architecture and real-time event streaming.",
       status: "ACTIVE",

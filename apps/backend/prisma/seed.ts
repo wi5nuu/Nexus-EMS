@@ -8,18 +8,18 @@ async function main() {
 
   // 1. Organization
   const organization = await prisma.organization.upsert({
-    where: { slug: 'nexus-corp' },
+    where: { slug: 'vanguard-corp' },
     update: {},
     create: {
-      name: 'Nexus Corp',
-      slug: 'nexus-corp',
+      name: 'Vanguard Corp',
+      slug: 'vanguard-corp',
     },
   });
 
   // 2. Admin User
   const passwordHash = await argon2.hash('password123');
   const admin = await prisma.user.upsert({
-    where: { email: 'admin@nexus.co' },
+    where: { email: 'admin@vanguard.sh' },
     update: {
       passwordHash,
       firstName: 'Wisnu',
@@ -27,7 +27,7 @@ async function main() {
       status: 'ACTIVE',
     },
     create: {
-      email: 'admin@nexus.co',
+      email: 'admin@vanguard.sh',
       passwordHash,
       firstName: 'Wisnu',
       lastName: 'Dev',
@@ -41,7 +41,7 @@ async function main() {
   if (!workspace) {
     workspace = await prisma.workspace.create({
       data: {
-        name: 'Nexus Engineering',
+        name: 'Vanguard Engineering',
         organizationId: organization.id,
       }
     });
@@ -51,7 +51,7 @@ async function main() {
     where: { key: 'PLAT' },
     update: {},
     create: {
-      name: 'Core Platform',
+      name: 'Vanguard Core Platform',
       key: 'PLAT',
       workspaceId: workspace.id,
     }
@@ -62,7 +62,7 @@ async function main() {
     where: { key: 'SUP' },
     update: {},
     create: {
-      name: 'Internal Support',
+      name: 'Vanguard Global Support',
       key: 'SUP',
       organizationId: organization.id,
     }
@@ -102,18 +102,88 @@ async function main() {
     update: {},
     create: {
       userId: admin.id,
-      jobTitle: 'Principal Engineer',
+      jobTitle: 'Vanguard Principal Engineer',
       departmentId: department.id,
       joinDate: new Date(),
       phoneNumber: '+62 821-2345-6789',
       officeLocation: 'Jakarta HQ (SCBD)',
-      githubHandle: '@Wisnu-nexus',
-      awsHandle: 'nexus-admin',
+      githubHandle: '@Wisnu-vanguard',
+      awsHandle: 'vanguard-admin',
       slackHandle: 'Wisnu',
     },
   });
 
-  console.log('Seeding complete. User: admin@nexus.co / password123');
+  // ... (Permissions section remains same as resource names are neutral or already correct)
+  
+  // 6. Permissions & Roles
+  const standardPermissions = [
+    { resource: 'Tickets', action: 'Read' },
+    { resource: 'Tickets', action: 'Manage' },
+    { resource: 'HR', action: 'Read' },
+    { resource: 'HR', action: 'Manage' },
+    { resource: 'Audit', action: 'Read' },
+    { resource: 'Infrastructure', action: 'Manage' },
+    { resource: 'Security', action: 'Manage' },
+  ];
+
+  const permissions = [];
+  for (const p of standardPermissions) {
+    const perm = await prisma.permission.upsert({
+      where: { resource_action: { resource: p.resource, action: p.action } },
+      update: {},
+      create: p,
+    });
+    permissions.push(perm);
+  }
+
+  const adminRole = await prisma.role.upsert({
+    where: { id: 'admin-role-id' }, // Stable ID for seeding
+    update: {},
+    create: {
+      id: 'admin-role-id',
+      name: 'ADMIN',
+      description: 'System Administrator with full access to enterprise clusters.',
+      organizationId: organization.id,
+    }
+  });
+
+  // Link Admin User to Admin Role
+  await prisma.userRole.upsert({
+    where: { userId_roleId: { userId: admin.id, roleId: adminRole.id } },
+    update: {},
+    create: { userId: admin.id, roleId: adminRole.id },
+  });
+
+  // Assign all permissions to Admin Role
+  for (const perm of permissions) {
+    await prisma.rolePermission.upsert({
+      where: { roleId_permissionId: { roleId: adminRole.id, permissionId: perm.id } },
+      update: {},
+      create: { roleId: adminRole.id, permissionId: perm.id },
+    });
+  }
+
+  // 7. Salary Bands
+  const bands = [
+    { level: 'L1', minSalary: 4000, maxSalary: 6500 },
+    { level: 'L2', minSalary: 7000, maxSalary: 11500 },
+    { level: 'L3', minSalary: 12000, maxSalary: 18000 },
+    { level: 'L4', minSalary: 19000, maxSalary: 28000 },
+    { level: 'L5', minSalary: 30000, maxSalary: 55000 },
+  ];
+
+  for (const b of bands) {
+    await prisma.salaryBand.create({
+      data: {
+        level: b.level,
+        minSalary: b.minSalary,
+        maxSalary: b.maxSalary,
+        organizationId: organization.id,
+      }
+    });
+  }
+
+  console.log('Seeding complete. User: admin@vanguard.sh / password123');
 }
 
 main()

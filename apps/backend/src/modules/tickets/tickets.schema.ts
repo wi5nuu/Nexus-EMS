@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const createTicketSchema = z.object({
-  ticketProjectId: z.string().uuid(),
+  ticketProjectId: z.string().uuid().optional(),
   title: z.string().min(2).max(255),
   description: z.string().optional(),
   status: z.enum(['OPEN', 'TRIAGED', 'IN_PROGRESS', 'RESOLVED', 'CLOSED']).default('OPEN'),

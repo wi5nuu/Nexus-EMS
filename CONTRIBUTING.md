@@ -1,39 +1,41 @@
-# Contributing to Nexus EMS
+# Contributing to Vanguard
 
-Welcome! We are excited that you are interested in contributing to Nexus EMS. 
+Welcome! We are excited that you are interested in contributing to Vanguard. This is a Strategic Execution Hub designed for elite engineering operations.
 
-## 🛠️ Code of Conduct
+## Architecture
 
-By participating in this project, you agree to abide by our code of professional conduct and respect all contributors and maintainers.
+Vanguard is structured as a **Monorepo** using npm workspaces:
 
-## 🔍 How to Contribute
+- `apps/web`: The Next.js 14 Frontend.
+- `apps/backend`: The Fastify Node.js API.
+- `packages/*`: Shared utilities and configurations (Planned).
 
-### 1. Reporting Bugs
-- Use the **GitHub Issues** tab to report bugs.
-- Provide a clear title and description.
-- Include steps to reproduce the issue.
+## Tech Stack
 
-### 2. Suggesting Enhancements
-- If you have an idea for a feature, please open an issue first to discuss it.
+Please ensure you are familiar with the following before contributing:
+- TypeScript (Strict Mode)
+- Next.js (App Router)
+- Fastify
+- Prisma ORM
+- Tailwind CSS
 
-### 3. Pull Requests
+## Design Guidelines
+
+Vanguard uses an **Extreme Compact** design system. Please ensure any UI contributions follow these guidelines:
+1.  **High Density**: Information should be compact but readable.
+2.  **Keyboard First**: All actions should be mapped to the Command Hub (`Cmd+K`).
+3.  **Strategic Context**: Every new feature should link back to organizational goals.
+
+## Workflow
+
 1. Fork the repository.
-2. Create a new branch (`feat/your-feature` or `fix/your-fix`).
-3. Commit your changes with a descriptive message.
-4. Push to your branch and open a Pull Request.
-
-## 🏗️ Development Process
-
-### Styling Philosophy
-Nexus EMS uses an **Extreme Compact** design system. Please ensure any UI contributions follow these guidelines:
-- Use **Tailwind CSS** for all styling.
-- Minimize vertical padding and margin where possible.
-- Ensure high-density readability.
-
-### Code Standards
-- Use **TypeScript** for all new code.
-- Follow the existing **Fastify** and **Next.js** patterns.
-- Ensure all logic is covered by clear comments.
+2. Create your feature branch (`git checkout -b feature/StrategicGoal`).
+3. Commit your changes (`git commit -m 'feat: Add new strategic metric'`).
+4. Push to the branch (`git push origin feature/StrategicGoal`).
+5. Open a Pull Request.
 
 ---
-*Maintained by Wisnu Alfian Nur Ashar*
+
+<p align="center">
+  Forged by <strong>Wisnu Alfian Nur Ashar</strong>
+</p>

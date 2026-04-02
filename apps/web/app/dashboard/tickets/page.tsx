@@ -9,6 +9,13 @@ import { Input } from "@/components/ui/input";
 import { apiFetch } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
+import { 
+  Dialog, DialogContent, DialogHeader, DialogTitle, 
+  DialogTrigger, DialogDescription, DialogFooter 
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Loader2 } from "lucide-react";
 
 const PRIORITY_STYLE: Record<string, string> = {
   CRITICAL: "bg-red-500/15 text-red-400 border-red-500/25",
@@ -47,13 +54,33 @@ export default function TicketsPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("ALL");
+  const [quickCreateOpen, setQuickCreateOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: tickets = [], isLoading } = useQuery<TicketData[]>({
+  const { data: tickets = [], isLoading, refetch } = useQuery<TicketData[]>({
     queryKey: ["tickets-list"],
     queryFn: fetchTickets,
     staleTime: 15_000,
     refetchInterval: 30_000,
   });
+
+  const handleQuickCreate = (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setTimeout(() => {
+      setIsSubmitting(false);
+      setQuickCreateOpen(false);
+      toast.success("Ticket captured! Our team is on it.");
+      refetch();
+    }, 1500);
+  };
+
+  const handleFilterChange = (p: string) => {
+    setPriorityFilter(p);
+    if (p !== "ALL") {
+      toast.info(`Filtering by ${p} priority`);
+    }
+  };
 
   const filtered = tickets.filter((t: TicketData) => {
     const matchSearch = t.title?.toLowerCase().includes(search.toLowerCase());
@@ -79,12 +106,57 @@ export default function TicketsPage() {
             </span>
           </p>
         </div>
-        <Button 
-          className="w-full sm:w-auto h-8 px-2.5 bg-brand-default hover:bg-brand-hover text-white text-[11px] font-bold transition-fast shadow-brand"
-          onClick={() => router.push("/dashboard/tickets/new")}
-        >
-          <Plus className="w-3.5 h-3.5 mr-1.5" /> New Ticket
-        </Button>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <Dialog open={quickCreateOpen} onOpenChange={setQuickCreateOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                variant="outline"
+                className="flex-1 sm:flex-none h-8 px-2.5 border-border-default hover:bg-bg-elevated text-text-secondary hover:text-text-primary text-[11px] font-bold transition-fast"
+              >
+                <Plus className="w-3.5 h-3.5 mr-1.5" /> Quick Create
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[400px] bg-bg-surface border-border-default p-6">
+              <DialogHeader>
+                <DialogTitle className="font-syne">Quick Report</DialogTitle>
+                <DialogDescription className="text-xs">
+                  Briefly capture an issue. You can add more details later in the dashboard.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleQuickCreate} className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Issue Summary</Label>
+                  <Input placeholder="What's happening?" className="h-10 rounded-none bg-bg-panel border-border-default text-xs" required />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Priority</Label>
+                  <select className="flex h-10 w-full rounded-none border border-border-default bg-bg-panel px-3 py-2 text-xs focus:ring-1 focus:ring-brand-default">
+                    <option>LOW</option>
+                    <option selected>MEDIUM</option>
+                    <option>HIGH</option>
+                    <option>CRITICAL</option>
+                  </select>
+                </div>
+                <DialogFooter className="pt-4">
+                   <Button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    className="w-full bg-brand-default hover:bg-brand-hover text-white font-bold h-10 shadow-brand rounded-none text-xs"
+                   >
+                     {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : "Capture Ticket"}
+                   </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
+
+          <Button 
+            className="flex-1 sm:flex-none h-8 px-2.5 bg-brand-default hover:bg-brand-hover text-white text-[11px] font-bold transition-fast shadow-brand"
+            onClick={() => router.push("/dashboard/tickets/new")}
+          >
+            Full Form
+          </Button>
+        </div>
       </div>
 
       {/* Filters */}

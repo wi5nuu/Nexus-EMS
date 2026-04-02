@@ -10,8 +10,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function DocsPortalPage() {
+  const router = useRouter();
   const sections = [
     { 
       title: "Getting Started", 
@@ -49,7 +52,7 @@ export default function DocsPortalPage() {
       <div className="flex flex-col items-center text-center space-y-6 py-8">
         <div className="space-y-2">
            <h1 className="font-syne font-black text-4xl sm:text-5xl text-text-primary tracking-tighter uppercase italic">Engineering Docs</h1>
-           <p className="text-text-secondary font-dmsans max-w-xl text-lg">Central documentation portal for Nexus Corp platform engineers.</p>
+           <p className="text-text-secondary font-dmsans max-w-xl text-lg">Central documentation portal for Vanguard Corp platform engineers.</p>
         </div>
         <div className="relative w-full max-w-2xl">
            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-text-tertiary" />
@@ -77,7 +80,11 @@ export default function DocsPortalPage() {
             <CardContent className="pt-6">
                <div className="space-y-1">
                   {section.items.map((item) => (
-                    <button key={item} className="w-full flex items-center justify-between p-2.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-elevated/50 transition-fast text-[13px] font-medium group/item">
+                    <button 
+                      key={item} 
+                      onClick={() => toast.loading(`Opening ${item}...`)}
+                      className="w-full flex items-center justify-between p-2.5 rounded-lg text-text-secondary hover:text-text-primary hover:bg-bg-elevated/50 transition-fast text-[13px] font-medium group/item"
+                    >
                        <span className="flex items-center gap-2">
                           <FileText className="h-3.5 w-3.5 text-text-tertiary opacity-0 group-hover/item:opacity-100 transition-fast" />
                           {item}
@@ -104,7 +111,11 @@ export default function DocsPortalPage() {
               </div>
               <h4 className="font-syne font-bold text-sm text-text-primary mb-1">{link.label}</h4>
               <p className="text-xs text-text-tertiary leading-relaxed mb-4">{link.desc}</p>
-              <Button variant="ghost" className="h-8 p-0 text-brand-text hover:text-brand-hover text-xs font-bold uppercase tracking-widest">
+              <Button 
+                variant="ghost" 
+                className="h-8 p-0 text-brand-text hover:text-brand-hover text-xs font-bold uppercase tracking-widest"
+                onClick={() => toast.info(`Redirecting to ${link.label} internal resource...`)}
+              >
                  Learn More <ExternalLink className="h-3 w-3 ml-2" />
               </Button>
            </div>
@@ -118,7 +129,7 @@ export default function DocsPortalPage() {
          </div>
          <h3 className="font-syne font-bold text-xl text-text-primary tracking-tight">Need more help?</h3>
          <p className="text-text-secondary font-dmsans max-w-md mx-auto">Our internal infrastructure team is available on the <span className="font-bold text-brand-text cursor-pointer hover:underline">#engineering-help</span> Slack channel for real-time support.</p>
-         <Button onClick={() => { window.location.href = '/dashboard/tickets/new'; }} className="bg-brand-default hover:bg-brand-hover text-white font-bold h-10 px-8 shadow-brand">
+         <Button onClick={() => router.push('/dashboard/tickets/new')} className="bg-brand-default hover:bg-brand-hover text-white font-bold h-10 px-8 shadow-brand">
             Open Support Ticket
          </Button>
       </div>

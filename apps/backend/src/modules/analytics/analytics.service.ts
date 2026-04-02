@@ -66,10 +66,51 @@ export class AnalyticsService {
       include: { reporter: true }
     });
 
+    const ticketTrend = await this.getTicketTrendData(organizationId);
+
     return {
       recentTickets,
+      ticketTrend,
       averageTicketResolutionTime: "2.4h", // Mock for now
       slaCompliance: "94%" // Mock for now
     };
+  }
+
+  private async getTicketTrendData(organizationId: string) {
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const now = new Date();
+    const trend = [];
+
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(now);
+      date.setDate(date.getDate() - i);
+      date.setHours(0, 0, 0, 0);
+      const nextDate = new Date(date);
+      nextDate.setDate(nextDate.getDate() + 1);
+
+      const [reported, resolved] = await Promise.all([
+        prisma.ticket.count({
+          where: {
+            project: { organizationId },
+            createdAt: { gte: date, lt: nextDate }
+          }
+        }),
+        prisma.ticket.count({
+          where: {
+            project: { organizationId },
+            status: 'RESOLVED',
+            updatedAt: { gte: date, lt: nextDate }
+          }
+        })
+      ]);
+
+      trend.push({
+        name: days[date.getDay()],
+        reported,
+        resolved
+      });
+    }
+
+    return trend;
   }
 }

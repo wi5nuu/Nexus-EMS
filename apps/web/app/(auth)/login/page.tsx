@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,13 @@ import { Eye, EyeOff, Loader2, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081";
+const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "YOUR_GOOGLE_CLIENT_ID";
+
+declare global {
+  interface Window {
+    google: any;
+  }
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -18,11 +25,64 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  useEffect(() => {
+    // Initialize Google Identity Services
+    if (typeof window !== "undefined" && window.google) {
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleResponse,
+      });
+      
+      // Also show One Tap prompt automatically for seamless experience
+      window.google.accounts.id.prompt();
+    }
+  }, []);
+
+  async function handleGoogleResponse(response: any) {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/v1/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idToken: response.credential }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Google login failed");
+
+      localStorage.setItem("vanguard_access_token", data.accessToken);
+      localStorage.setItem("vanguard_refresh_token", data.refreshToken);
+      localStorage.setItem("vanguard_user", JSON.stringify(data.user));
+
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function triggerGoogleLogin() {
+    if (window.google) {
+      window.google.accounts.id.prompt((notification: any) => {
+        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+          // Fallback if prompt doesn't show
+          window.google.accounts.id.renderButton(
+            document.getElementById("google-hidden-btn"),
+            { theme: "outline", size: "large" }
+          );
+          const hiddenBtn = document.querySelector("#google-hidden-btn [role=button]") as HTMLElement;
+          if (hiddenBtn) hiddenBtn.click();
+        }
+      });
+    }
+  }
+
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     const fullUrl = `${API_URL}/api/v1/auth/login`;
-    console.log(`[Auth] Attempting login at: ${fullUrl}`);
     setLoading(true);
 
     try {
@@ -32,22 +92,15 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       });
 
-      const contentType = res.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
-        const text = await res.text();
-        console.error(`[Auth] Expected JSON but received: ${contentType}`, text.slice(0, 200));
-        throw new Error(`Server returned HTML instead of JSON. Please check your NEXT_PUBLIC_API_URL setting in Vercel.`);
-      }
-
       const data = await res.json();
 
       if (!res.ok) {
         throw new Error(data.message || "Invalid credentials");
       }
 
-      localStorage.setItem("nexus_access_token", data.accessToken);
-      localStorage.setItem("nexus_refresh_token", data.refreshToken);
-      localStorage.setItem("nexus_user", JSON.stringify(data.user));
+      localStorage.setItem("vanguard_access_token", data.accessToken);
+      localStorage.setItem("vanguard_refresh_token", data.refreshToken);
+      localStorage.setItem("vanguard_user", JSON.stringify(data.user));
 
       router.push("/dashboard");
     } catch (err: unknown) {
@@ -81,28 +134,30 @@ export default function LoginPage() {
 
         {/* Logo & Brand */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-5 relative">
-            <div className="absolute inset-0 rounded-2xl bg-violet-500/20 border border-violet-500/40 shadow-brand" />
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-none mb-5 relative">
+            <div className="absolute inset-0 rounded-none bg-violet-500/20 border border-violet-500/40 shadow-brand" />
             <div className="relative flex items-center justify-center">
-              {/* Custom N logo mark */}
               <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-                <path d="M5 23V5L14 18V5L23 23" stroke="var(--violet-400)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M5 5L14 23L23 5" stroke="var(--violet-400)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
             </div>
           </div>
-          <h1 className="font-syne text-2xl font-bold text-text-primary tracking-tight">Nexus Corp</h1>
-          <p className="text-text-tertiary mt-1 font-dmsans text-sm">Enterprise Management System</p>
+          <h1 className="font-syne text-2xl font-bold text-text-primary tracking-tight uppercase">Vanguard Corp</h1>
+          <p className="text-text-tertiary mt-1 font-dmsans text-[11px] font-bold uppercase tracking-widest">Strategic Execution Hub</p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-bg-surface border border-border-default rounded-2xl p-7 shadow-lg">
-          <form onSubmit={handleLogin} className="space-y-5">
+        <div className="bg-bg-surface border border-border-strong rounded-none p-8 shadow-2xl relative overflow-hidden">
+          {/* Subtle card glow */}
+          <div className="absolute top-0 right-0 w-40 h-40 bg-brand-default/5 blur-3xl pointer-events-none" />
+          
+          <form onSubmit={handleLogin} className="relative space-y-5">
 
             {/* Email */}
             <div className="space-y-2">
               <Label
                 htmlFor="email"
-                className="text-[11px] font-mono font-bold uppercase tracking-widest text-text-tertiary"
+                className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary"
               >
                 Work Email
               </Label>
@@ -111,11 +166,11 @@ export default function LoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@nexus.co"
+                placeholder="you@vanguard.sh"
                 required
                 className={cn(
-                  "h-10 bg-bg-sunken border-border-default text-text-primary placeholder:text-text-tertiary font-dmsans text-[13px] transition-all duration-fast",
-                  "focus:border-brand-default focus:ring-2 focus:ring-brand-muted focus:ring-offset-0"
+                  "h-10 bg-bg-sunken border-border-default rounded-none text-text-primary placeholder:text-text-tertiary font-dmsans text-[13px] transition-all",
+                  "focus:border-brand-default focus:ring-0"
                 )}
               />
             </div>
@@ -125,13 +180,13 @@ export default function LoginPage() {
               <div className="flex justify-between items-center">
                 <Label
                   htmlFor="password"
-                  className="text-[11px] font-mono font-bold uppercase tracking-widest text-text-tertiary"
+                  className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary"
                 >
                   Password
                 </Label>
                 <button
                   type="button"
-                  className="text-[11px] font-medium text-brand-text hover:text-brand-hover transition-fast"
+                  className="text-[10px] font-bold uppercase tracking-wider text-brand-text hover:text-brand-hover transition-all"
                   onClick={() => router.push("/reset-password")}
                 >
                   Forgot?
@@ -146,14 +201,14 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   required
                   className={cn(
-                    "h-10 bg-bg-sunken border-border-default text-text-primary pr-10 font-dmsans text-[13px] transition-all duration-fast",
-                    "focus:border-brand-default focus:ring-2 focus:ring-brand-muted focus:ring-offset-0"
+                    "h-10 bg-bg-sunken border-border-default rounded-none text-text-primary pr-10 font-dmsans text-[13px] transition-all",
+                    "focus:border-brand-default focus:ring-0"
                   )}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-secondary transition-fast"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-secondary transition-all"
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -163,8 +218,8 @@ export default function LoginPage() {
 
             {/* Error */}
             {error && (
-              <div className="flex items-center gap-2.5 bg-crimson-500/10 border border-crimson-500/30 text-crimson-500 text-[12px] px-4 py-3 rounded-lg font-dmsans font-medium animate-in fade-in slide-in-from-top-1">
-                <AlertCircle className="h-4 w-4 shrink-0" />
+              <div className="flex items-center gap-2.5 bg-crimson-500/10 border border-crimson-500/30 text-crimson-500 text-[11px] px-4 py-3 rounded-none font-medium animate-in fade-in slide-in-from-top-1">
+                <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                 {error}
               </div>
             )}
@@ -175,23 +230,23 @@ export default function LoginPage() {
               type="submit"
               disabled={loading}
               className={cn(
-                "w-full h-10 font-syne font-bold text-[13px] tracking-wider text-white transition-all duration-fast",
+                "w-full h-10 font-syne font-bold text-[13px] tracking-wider text-white transition-all rounded-none",
                 "bg-brand-default hover:bg-brand-hover",
-                "shadow-brand hover:shadow-lg",
+                "shadow-brand active:scale-[0.98]",
                 loading && "opacity-70 cursor-not-allowed"
               )}
             >
               {loading ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Signing in...
+                  SIGNING IN...
                 </span>
               ) : (
-                "SIGN IN TO NEXUS"
+                "SIGN IN TO VANGUARD"
               )}
             </Button>
 
-            <div className="relative flex items-center justify-center py-2">
+            <div className="relative flex items-center justify-center py-1">
               <div className="absolute inset-0 flex items-center px-1">
                 <div className="w-full border-t border-border-subtle" />
               </div>
@@ -201,38 +256,27 @@ export default function LoginPage() {
             <Button
               type="button"
               variant="outline"
-              className="w-full h-10 border-border-default hover:bg-bg-elevated text-text-primary font-bold text-[11px] tracking-wider transition-all flex items-center justify-center gap-2"
-              onClick={() => alert("Google SSO is protected by corporate policy. Please use work email for now.")}
+              className="w-full h-10 border-border-default hover:bg-bg-elevated text-text-primary font-bold text-[11px] tracking-wider transition-all flex items-center justify-center gap-2 rounded-none"
+              onClick={triggerGoogleLogin}
             >
               <svg className="h-4 w-4" viewBox="0 0 24 24">
-                <path
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  fill="#4285F4"
-                />
-                <path
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-1 .67-2.28 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  fill="#34A853"
-                />
-                <path
-                  d="M5.84 14.09c-.22-.67-.35-1.39-.35-2.09s.13-1.42.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
-                  fill="#FBBC05"
-                />
-                <path
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  fill="#EA4335"
-                />
+                <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+                <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-1 .67-2.28 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                <path d="M5.84 14.09c-.22-.67-.35-1.39-.35-2.09s.13-1.42.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05" />
+                <path d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
               </svg>
               SIGN IN WITH GOOGLE
             </Button>
+            <div id="google-hidden-btn" className="hidden" />
           </form>
 
-          <div className="mt-5 pt-5 border-t border-border-subtle">
+          <div className="mt-6 pt-6 border-t border-border-subtle">
             <p className="text-center text-[12px] font-medium text-text-tertiary">
               Don&apos;t have an account?{" "}
               <button
                 type="button"
                 onClick={() => router.push("/register")}
-                className="text-brand-text hover:text-brand-hover font-bold transition-fast"
+                className="text-brand-text hover:text-brand-hover font-bold transition-all"
               >
                 Create one
               </button>
@@ -241,8 +285,8 @@ export default function LoginPage() {
 
           </div>
 
-          <p className="text-center mt-6 text-[10px] font-mono text-text-tertiary opacity-40 uppercase tracking-widest">
-            Nexus Corp © 2026 · Internal Engineering Platform
+          <p className="text-center mt-6 text-[10px] font-mono text-text-tertiary opacity-30 uppercase tracking-widest">
+            Vanguard Corp © 2026 · Strategic Execution Platform
           </p>
         </div>
       </div>

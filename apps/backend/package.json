@@ -1,6 +1,6 @@
 {
-  "name": "@nexus-ems/backend",
-  "version": "1.0.0",
+  "name": "@vanguard/backend",
+  "version": "0.0.1",
   "private": true,
   "main": "dist/app.js",
   "scripts": {
@@ -10,7 +10,11 @@
     "start": "node dist/app.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:seed": "prisma db seed",
     "test": "vitest"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
     "@fastify/cors": "^9.0.1",
@@ -26,6 +30,7 @@
     "fastify": "^4.26.2",
     "fastify-casbin": "^4.0.0",
     "fastify-type-provider-zod": "^6.1.0",
+    "google-auth-library": "^10.6.2",
     "ioredis": "^5.10.1",
     "kafkajs": "^2.2.4",
     "pino": "^8.19.0",

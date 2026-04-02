@@ -6,25 +6,41 @@ import {
   ArrowLeft, 
   Send, 
   AlertTriangle, 
-  ShieldCheck
+  ShieldCheck,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { toast } from "sonner";
+import { apiFetch } from "@/lib/auth";
 
 export default function NewTicketPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    priority: "MEDIUM",
+    description: "",
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
+    
+    try {
+      await apiFetch("/api/v1/tickets", {
+        method: "POST",
+        body: JSON.stringify(formData),
+      });
+      toast.success("Ticket created successfully. Our engineers have been notified.");
       router.push("/dashboard/tickets");
-    }, 1500);
+    } catch (err: any) {
+      toast.error(`Failed to create ticket: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -59,6 +75,8 @@ export default function NewTicketPage() {
                     placeholder="Brief summary of the issue..." 
                     className="h-10 bg-bg-sunken border-border-default text-text-primary font-dmsans text-[13px] focus:ring-brand-default"
                     required
+                    value={formData.title}
+                    onChange={(e) => setFormData({...formData, title: e.target.value})}
                   />
                 </div>
 
@@ -67,7 +85,11 @@ export default function NewTicketPage() {
                     <Label className="text-xs font-mono font-bold uppercase tracking-widest text-text-tertiary">
                       Priority
                     </Label>
-                    <select className="flex h-10 w-full rounded-md border border-border-default bg-bg-sunken px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-default transition-fast">
+                    <select 
+                      className="flex h-10 w-full rounded-md border border-border-default bg-bg-sunken px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-default transition-fast"
+                      value={formData.priority}
+                      onChange={(e) => setFormData({...formData, priority: e.target.value})}
+                    >
                       <option value="LOW">Low</option>
                       <option value="MEDIUM">Medium</option>
                       <option value="HIGH">High</option>
@@ -78,10 +100,8 @@ export default function NewTicketPage() {
                     <Label className="text-xs font-mono font-bold uppercase tracking-widest text-text-tertiary">
                       Project
                     </Label>
-                    <select className="flex h-10 w-full rounded-md border border-border-default bg-bg-sunken px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-default transition-fast">
-                      <option value="NEX">Nexus Platform</option>
-                      <option value="HRS">HR Portal</option>
-                      <option value="INF">Infra Mod</option>
+                    <select className="flex h-10 w-full rounded-md border border-border-default bg-bg-sunken px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-default transition-fast" defaultValue="NEX">
+                      <option value="NEX">Vanguard Platform (Core)</option>
                     </select>
                   </div>
                 </div>
@@ -96,6 +116,8 @@ export default function NewTicketPage() {
                     rows={6}
                     className="flex w-full rounded-md border border-border-default bg-bg-sunken px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-brand-default transition-fast resize-none"
                     required
+                    value={formData.description}
+                    onChange={(e) => setFormData({...formData, description: e.target.value})}
                   />
                 </div>
 
@@ -111,10 +133,10 @@ export default function NewTicketPage() {
                   <Button 
                     type="submit" 
                     disabled={loading}
-                    className="bg-brand-default hover:bg-brand-hover text-white font-bold px-6 shadow-brand"
+                    className="bg-brand-default hover:bg-brand-hover text-white font-bold px-6 shadow-brand rounded-none h-10 transition-all active:scale-95"
                   >
-                    {loading ? "Creating..." : "Create Ticket"}
-                    <Send className="ml-2 h-4 w-4" />
+                    {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : "Create Ticket"}
+                    {!loading && <Send className="ml-2 h-4 w-4" />}
                   </Button>
                 </div>
               </form>

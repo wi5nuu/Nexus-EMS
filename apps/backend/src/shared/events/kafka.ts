@@ -55,4 +55,4 @@ export class KafkaEventStream {
 }
 
 // Global Singleton for general service events
-export const kafkaStream = new KafkaEventStream('nexus-backend', 'nexus-events-group');
+export const kafkaStream = new KafkaEventStream('Vanguard-backend', 'Vanguard-events-group');

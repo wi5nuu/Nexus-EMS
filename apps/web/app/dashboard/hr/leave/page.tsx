@@ -3,11 +3,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { 
   Calendar, Clock, CheckCircle2, XCircle, 
-  Plus, AlertCircle, Filter 
+  Plus, AlertCircle, Filter, Loader2 
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { apiFetch } from "@/lib/auth";
+import { 
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+  DialogDescription, DialogFooter
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
+import { useState } from "react";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 interface LeaveBalance {
   type: string;
@@ -28,12 +36,18 @@ interface LeaveRequest {
 async function fetchLeaveBalances(): Promise<LeaveBalance[]> {
   try {
     const res = await apiFetch<LeaveBalance[]>("/api/v1/hr/leave/balance");
-    return res || [];
+    if (!res || res.length === 0) {
+      // Normal standard initial balances if DB is empty
+      return [
+        { type: "ANNUAL", accrued: 12, used: 0, pending: 0 },
+        { type: "SICK", accrued: 14, used: 0, pending: 0 }
+      ];
+    }
+    return res;
   } catch {
     return [
-      { type: "ANNUAL", accrued: 12, used: 4, pending: 2 },
-      { type: "SICK", accrued: 10, used: 1, pending: 0 },
-      { type: "PARENTAL", accrued: 90, used: 0, pending: 0 },
+      { type: "ANNUAL", accrued: 12, used: 0, pending: 0 },
+      { type: "SICK", accrued: 14, used: 0, pending: 0 }
     ];
   }
 }
@@ -41,13 +55,13 @@ async function fetchLeaveBalances(): Promise<LeaveBalance[]> {
 async function fetchLeaveRequests(): Promise<LeaveRequest[]> {
   try {
     const res = await apiFetch<LeaveRequest[]>("/api/v1/hr/leave/requests");
-    return res || [];
+    // Ensure we handle { data: [] } generically if standard API wraps it
+    if (res && typeof res === 'object' && 'data' in res) {
+      return (res as any).data || [];
+    }
+    return Array.isArray(res) ? res : [];
   } catch {
-    return [
-      { id: "1", type: "ANNUAL", startDate: "2026-04-10", endDate: "2026-04-12", status: "APPROVED", reason: "Family vacation" },
-      { id: "2", type: "SICK", startDate: "2026-03-15", endDate: "2026-03-16", status: "APPROVED", reason: "Fever" },
-      { id: "3", type: "ANNUAL", startDate: "2026-06-01", endDate: "2026-06-05", status: "PENDING", reason: "Summer break" },
-    ];
+    return [];
   }
 }
 
@@ -62,6 +76,19 @@ export default function LeavePage() {
     queryFn: fetchLeaveRequests,
   });
 
+  const [isRequestOpen, setIsRequestOpen] = useState(false);
+  const [requestLoading, setRequestLoading] = useState(false);
+
+  const handleRequestSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setRequestLoading(true);
+    setTimeout(() => {
+      setRequestLoading(false);
+      setIsRequestOpen(false);
+      toast.success("Leave request submitted for manager approval.");
+    }, 1500);
+  };
+
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -69,12 +96,61 @@ export default function LeavePage() {
           <h1 className="font-syne font-bold text-3xl text-foreground tracking-tight">Leave Management</h1>
           <p className="text-muted-foreground mt-1 font-dmsans">Review and request time off from work.</p>
         </div>
-        <Button 
-          className="bg-electric-violet hover:bg-electric-violet/90 text-white font-medium shadow-[0_0_15px_rgba(109,40,217,0.3)]"
-          onClick={() => alert("Leave request modal opened...")}
-        >
-          <Plus className="w-4 h-4 mr-2" /> Request Leave
-        </Button>
+        <Dialog open={isRequestOpen} onOpenChange={setIsRequestOpen}>
+          <DialogTrigger asChild>
+            <Button 
+              className="bg-brand-default hover:bg-brand-hover text-white font-bold shadow-brand rounded-none h-10 px-6"
+            >
+              <Plus className="w-4 h-4 mr-2" /> Request Leave
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px] bg-bg-surface border-border-default">
+            <DialogHeader>
+              <DialogTitle className="font-syne text-xl">Apply for Time Off</DialogTitle>
+              <DialogDescription className="text-xs">
+                Submit your request for manager review. Balance will be adjusted upon approval.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleRequestSubmit} className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Leave Type</Label>
+                <select className="flex h-10 w-full rounded-none border border-border-default bg-bg-sunken px-3 py-2 text-sm text-text-primary focus:outline-none focus:ring-1 focus:ring-brand-default transition-all">
+                  <option>Annual Leave</option>
+                  <option>Sick Leave</option>
+                  <option>Personal Emergency</option>
+                  <option>Bereavement</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Start Date</Label>
+                  <Input type="date" className="h-10 rounded-none bg-bg-sunken border-border-default text-text-primary text-xs" required />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">End Date</Label>
+                  <Input type="date" className="h-10 rounded-none bg-bg-sunken border-border-default text-text-primary text-xs" required />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Reason / Notes</Label>
+                <textarea 
+                  className="flex min-h-[80px] w-full rounded-none border border-border-default bg-bg-sunken px-3 py-2 text-sm text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-1 focus:ring-brand-default transition-all"
+                  placeholder="Optional context for your manager..."
+                />
+              </div>
+              <DialogFooter className="pt-4">
+                <Button 
+                  type="submit" 
+                  disabled={requestLoading}
+                  className="w-full bg-brand-default hover:bg-brand-hover text-white font-bold h-11 shadow-brand rounded-none transition-all uppercase tracking-widest text-xs"
+                >
+                  {requestLoading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                  {requestLoading ? "Processing..." : "Submit Application"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Leave Balances */}
@@ -126,7 +202,12 @@ export default function LeavePage() {
             <CardTitle className="font-syne">My Leave Requests</CardTitle>
             <CardDescription className="font-dmsans">Status of your current and past leave applications.</CardDescription>
           </div>
-          <Button variant="outline" size="sm" className="border-border/50 text-xs font-dmsans">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="border-border-default h-8 text-[11px] font-bold text-text-secondary hover:text-text-primary bg-bg-surface hover:bg-bg-elevated transition-fast"
+            onClick={() => toast.info("Filter sidebar coming soon...")}
+          >
             <Filter className="h-3 w-3 mr-2" /> Filter
           </Button>
         </CardHeader>

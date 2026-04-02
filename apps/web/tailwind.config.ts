@@ -17,9 +17,10 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        syne: ["var(--font-syne)", "sans-serif"],
-        dmsans: ["var(--font-dm-sans)", "sans-serif"],
-        mono: ["var(--font-jetbrains-mono)", "monospace"],
+        syne: ["Calibri", "ui-sans-serif", "system-ui", "sans-serif"],
+        dmsans: ["Calibri", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["Calibri", "ui-sans-serif", "system-ui", "sans-serif"],
+        mono: ["Consolas", "ui-monospace", "monospace"],
       },
       colors: {
         // Base Palette (Void)

@@ -8,26 +8,43 @@ import {
   Globe, 
   Mail,
   ShieldCheck,
-  CheckCircle
+  CheckCircle,
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { apiFetch } from "@/lib/auth";
+import { toast } from "sonner";
 
 export default function NewEmployeePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    jobTitle: "",
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
+    
+    try {
+      await apiFetch("/api/v1/hr/employees", {
+        method: "POST",
+        body: JSON.stringify(formData),
+      });
+      toast.success(`${formData.firstName} has been onboarded successfully.`);
       router.push("/dashboard/hr");
-    }, 1500);
+    } catch (err: any) {
+      toast.error(`Onboarding failed: ${err.message}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -43,7 +60,7 @@ export default function NewEmployeePage() {
         </Button>
         <div className="space-y-0.5">
           <h1 className="font-syne font-bold text-2xl text-text-primary tracking-tight">Onboard New Employee</h1>
-          <p className="text-xs text-text-tertiary font-dmsans">Register a new talent into the Nexus Corp workspace.</p>
+          <p className="text-xs text-text-tertiary font-dmsans">Register a new talent into the Vanguard Corp workspace.</p>
         </div>
       </div>
 
@@ -58,11 +75,25 @@ export default function NewEmployeePage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                    <div className="space-y-2">
                       <Label htmlFor="first-name" className="text-xs font-mono font-bold uppercase tracking-widest text-text-tertiary">First Name</Label>
-                      <Input id="first-name" placeholder="Wisnu" className="h-10 bg-bg-sunken border-border-default text-text-primary font-dmsans text-[13px] focus:ring-brand-default" required />
+                      <Input 
+                        id="first-name" 
+                        placeholder="Wisnu" 
+                        className="h-10 bg-bg-sunken border-border-default text-text-primary font-dmsans text-[13px] focus:ring-brand-default" 
+                        required 
+                        value={formData.firstName}
+                        onChange={(e) => setFormData({...formData, firstName: e.target.value})}
+                      />
                    </div>
                    <div className="space-y-2">
                       <Label htmlFor="last-name" className="text-xs font-mono font-bold uppercase tracking-widest text-text-tertiary">Last Name</Label>
-                      <Input id="last-name" placeholder="Dev" className="h-10 bg-bg-sunken border-border-default text-text-primary font-dmsans text-[13px] focus:ring-brand-default" required />
+                      <Input 
+                        id="last-name" 
+                        placeholder="Dev" 
+                        className="h-10 bg-bg-sunken border-border-default text-text-primary font-dmsans text-[13px] focus:ring-brand-default" 
+                        required 
+                        value={formData.lastName}
+                        onChange={(e) => setFormData({...formData, lastName: e.target.value})}
+                      />
                    </div>
                 </div>
 
@@ -70,14 +101,22 @@ export default function NewEmployeePage() {
                    <Label htmlFor="email" className="text-xs font-mono font-bold uppercase tracking-widest text-text-tertiary">Work Email</Label>
                    <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-text-tertiary" />
-                      <Input id="email" type="email" placeholder="Wisnu@nexus.co" className="h-10 pl-9 bg-bg-sunken border-border-default text-text-primary font-dmsans text-[13px] focus:ring-brand-default" required />
+                      <Input 
+                        id="email" 
+                        type="email" 
+                        placeholder="Wisnu@Vanguard.co" 
+                        className="h-10 pl-9 bg-bg-sunken border-border-default text-text-primary font-dmsans text-[13px] focus:ring-brand-default" 
+                        required 
+                        value={formData.email}
+                        onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      />
                    </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                    <div className="space-y-2">
                       <Label className="text-xs font-mono font-bold uppercase tracking-widest text-text-tertiary">Department</Label>
-                      <select className="flex h-10 w-full rounded-md border border-border-default bg-bg-sunken px-3 py-2 text-sm text-text-primary font-dmsans focus:outline-none focus:ring-2 focus:ring-brand-default transition-fast">
+                      <select className="flex h-10 w-full rounded-md border border-border-default bg-bg-sunken px-3 py-2 text-sm text-text-primary font-dmsans focus:outline-none focus:ring-2 focus:ring-brand-default transition-fast" defaultValue="ENG">
                         <option value="ENG">Engineering</option>
                         <option value="PRD">Product</option>
                         <option value="HR">Human Resources</option>
@@ -86,7 +125,7 @@ export default function NewEmployeePage() {
                    </div>
                    <div className="space-y-2">
                       <Label className="text-xs font-mono font-bold uppercase tracking-widest text-text-tertiary">Employment Level</Label>
-                      <select className="flex h-10 w-full rounded-md border border-border-default bg-bg-sunken px-3 py-2 text-sm text-text-primary font-dmsans focus:outline-none focus:ring-2 focus:ring-brand-default transition-fast">
+                      <select className="flex h-10 w-full rounded-md border border-border-default bg-bg-sunken px-3 py-2 text-sm text-text-primary font-dmsans focus:outline-none focus:ring-2 focus:ring-brand-default transition-fast" defaultValue="JR">
                         <option value="JR">Junior</option>
                         <option value="MD">Mid-Level</option>
                         <option value="SR">Senior</option>
@@ -108,14 +147,21 @@ export default function NewEmployeePage() {
              <CardContent className="pt-6 space-y-6">
                 <div className="space-y-2">
                    <Label htmlFor="job-title" className="text-xs font-mono font-bold uppercase tracking-widest text-text-tertiary">Official Job Title</Label>
-                   <Input id="job-title" placeholder="Senior Backend Engineer" className="h-10 bg-bg-sunken border-border-default text-text-primary font-dmsans text-[13px] focus:ring-brand-default" required />
+                   <Input 
+                    id="job-title" 
+                    placeholder="Senior Backend Engineer" 
+                    className="h-10 bg-bg-sunken border-border-default text-text-primary font-dmsans text-[13px] focus:ring-brand-default" 
+                    required 
+                    value={formData.jobTitle}
+                    onChange={(e) => setFormData({...formData, jobTitle: e.target.value})}
+                  />
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                    <div className="space-y-2">
                       <Label className="text-xs font-mono font-bold uppercase tracking-widest text-text-tertiary">Workspace Location</Label>
                       <div className="relative">
                          <Globe className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-tertiary" />
-                         <select className="flex h-10 w-full pl-9 rounded-md border border-border-default bg-bg-sunken py-2 text-sm text-text-primary font-dmsans focus:outline-none focus:ring-2 focus:ring-brand-default transition-fast">
+                         <select className="flex h-10 w-full pl-9 rounded-md border border-border-default bg-bg-sunken py-2 text-sm text-text-primary font-dmsans focus:outline-none focus:ring-2 focus:ring-brand-default transition-fast" defaultValue="JKT">
                            <option value="JKT">Office (Jakarta)</option>
                            <option value="REM">Remote (WFH)</option>
                            <option value="SNG">Office (Singapore)</option>
@@ -162,8 +208,9 @@ export default function NewEmployeePage() {
                     <Button 
                       type="submit" 
                       disabled={loading}
-                      className="w-full bg-brand-default hover:bg-brand-hover text-white font-bold h-10 text-[13px] tracking-wide shadow-brand"
+                      className="w-full bg-brand-default hover:bg-brand-hover text-white font-bold h-10 text-[13px] tracking-wide shadow-brand rounded-none"
                     >
+                      {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                       {loading ? "Registering Talent..." : "CONFIRM ONBOARDING"}
                     </Button>
                     <Button 

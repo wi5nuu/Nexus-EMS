@@ -13,7 +13,7 @@ export default function Home() {
       <div className="container relative z-10 px-6 py-24 mx-auto text-center">
         <div className="space-y-6">
           <h1 className="text-5xl md:text-7xl font-syne font-bold tracking-tight text-foreground">
-            <span className="block italic text-primary/80 mb-2">Nexus Corp.</span>
+            <span className="block italic text-primary/80 mb-2">Vanguard Corp.</span>
             Enterprise Management System
           </h1>
           

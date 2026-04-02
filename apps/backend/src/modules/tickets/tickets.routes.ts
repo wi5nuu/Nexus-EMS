@@ -71,4 +71,24 @@ export async function ticketsRoutes(fastify: FastifyInstance) {
       }
     },
   });
+
+  server.post('/:id/comments', {
+    schema: {
+      params: z.object({ id: z.string().uuid() }),
+      body: z.object({ body: z.string().min(1) }),
+    },
+    handler: async (request, reply) => {
+      const { id } = request.params as any;
+      const { body } = request.body as any;
+      const userId = (request.user as any)?.sub;
+      if (!userId) return reply.code(401).send({ error: 'Unauthorized' });
+
+      try {
+        const comment = await ticketsService.createComment(id, userId, body);
+        return reply.code(201).send({ data: comment });
+      } catch (error: any) {
+        return reply.code(400).send({ error: 'Bad Request', message: error.message });
+      }
+    },
+  });
 }
