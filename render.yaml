@@ -3,16 +3,9 @@ services:
     name: nexus-ems-backend
     env: node
     plan: free
-    buildCommand: pnpm install && pnpm run build
-    startCommand: pnpm run start
+    buildCommand: npm install && npm run build -w apps/backend
+    startCommand: npm run start -w apps/backend
     envVars:
       - key: NODE_ENV
         value: production
-      - fromDatabase:
-          name: nexus-db
-          property: connectionString
-    rootDirectory: apps/backend
-
-database:
-  name: nexus-db
-  plan: free
+    rootDirectory: .

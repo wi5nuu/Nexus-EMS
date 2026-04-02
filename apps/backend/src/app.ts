@@ -112,14 +112,19 @@ async function bootstrap() {
     });
 
     // Start Server
-    const port = Number(process.env.PORT) || 8080;
-    await fastify.listen({ port, host: '0.0.0.0' });
+    // Hugging Face Spaces requires port 7860
+    const port = Number(process.env.PORT) || 7860;
+    const host = '0.0.0.0';
     
-    // Connect Kafka after server starts
-    await kafkaStream.connect();
+    await fastify.listen({ port, host });
     
-    fastify.log.info(`Server listening on http://localhost:${port}`);
-    fastify.log.info(`Documentation available at http://localhost:${port}/docs`);
+    // Connect Kafka after server starts (non-blocking)
+    kafkaStream.connect().catch(err => {
+      fastify.log.error(`[Kafka] Initial connection failed: ${err.message}`);
+    });
+    
+    fastify.log.info(`Nexus EMS Backend listening on http://${host}:${port}`);
+    fastify.log.info(`API Documentation: http://${host}:${port}/docs`);
   } catch (err) {
     fastify.log.error(err);
     process.exit(1);

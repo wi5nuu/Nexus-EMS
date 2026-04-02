@@ -115,9 +115,12 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   const [activeTab, setActiveTab] = useState<Tab>("Overview");
   const router = useRouter();
 
-  const { data: project, isLoading } = useQuery<ProjectDetail>({
+  const { data: project, isLoading } = useQuery<ProjectDetail, Error>({
     queryKey: ["project", params.id],
-    queryFn: () => fetchProject(params.id),
+    queryFn: async () => {
+      const res = await fetchProject(params.id);
+      return res;
+    },
     staleTime: 30_000,
   });
 
