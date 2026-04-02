@@ -4,18 +4,13 @@ import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { 
   Search, 
-  PlusCircle, 
   Ticket, 
-  Users, 
-  Layers, 
-  LayoutDashboard, 
   Calendar,
   ChevronRight,
   ShieldAlert,
   Building2,
   Sparkles,
   Zap,
-  Activity,
   History,
   Target
 } from "lucide-react";

@@ -37,6 +37,7 @@ export default function LoginPage() {
       // Also show One Tap prompt automatically for seamless experience
       window.google.accounts.id.prompt();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

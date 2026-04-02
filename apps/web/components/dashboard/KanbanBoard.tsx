@@ -78,11 +78,12 @@ export function KanbanBoard() {
     queryKey: ['tickets'],
     queryFn: async () => {
       try {
-        const json = await apiFetch<{ data: any[] }>('/api/v1/tickets');
+        type ApiTicket = { id: string, status: string, title: string, description?: string, priority: "Low" | "Medium" | "High" | "Urgent", assignee?: { name?: string, email?: string } };
+        const json = await apiFetch<{ data: ApiTicket[] }>('/api/v1/tickets');
         if (!json || !json.data || json.data.length === 0) return initialTasks;
         
         // Map backend Domain 4 Ticket schema to Kanban Task schema
-        return json.data.map((t: any) => ({
+        return json.data.map((t) => ({
           id: t.id,
           columnId: t.status,
           title: t.title,
@@ -90,8 +91,8 @@ export function KanbanBoard() {
           priority: t.priority,
           assignee: t.assignee?.name?.substring(0,2).toUpperCase() || t.assignee?.email?.substring(0,2).toUpperCase() || 'NA'
         }));
-      } catch (e: any) {
-        console.warn("Backend unavailable, falling back to mock data", e.message);
+      } catch (e: unknown) {
+        console.warn("Backend unavailable, falling back to mock data", e instanceof Error ? e.message : String(e));
         return initialTasks;
       }
     },
@@ -174,7 +175,7 @@ export function KanbanBoard() {
     }
   }
 
-  function handleDragEnd(event: DragStartEvent) {
+  function handleDragEnd() {
     // Determine target column and initiate backend mutation 
     if (activeTask) {
       const currentTask = tasks.find(t => t.id === activeTask.id);

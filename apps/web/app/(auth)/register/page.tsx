@@ -41,6 +41,7 @@ export default function RegisterPage() {
       // One Tap is also great here
       window.google.accounts.id.prompt();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [router]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
