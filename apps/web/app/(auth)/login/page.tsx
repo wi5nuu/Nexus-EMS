@@ -194,7 +194,7 @@ export default function LoginPage() {
 
           <div className="mt-5 pt-5 border-t border-border-subtle">
             <p className="text-center text-[12px] font-medium text-text-tertiary">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <button
                 type="button"
                 onClick={() => router.push("/register")}
@@ -205,15 +205,6 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Demo credentials */}
-          <div className="mt-4 flex items-center gap-2 justify-center">
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-              <p className="text-[11px] font-mono text-text-tertiary text-center">
-                Demo: <span className="text-brand-text font-bold">admin@nexus.co</span>{" "}
-                /{" "}
-                <span className="text-brand-text font-bold">password123</span>
-              </p>
-            </div>
           </div>
 
           <p className="text-center mt-6 text-[10px] font-mono text-text-tertiary opacity-40 uppercase tracking-widest">

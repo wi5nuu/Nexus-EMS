@@ -38,23 +38,8 @@ async function fetchTicket(id: string): Promise<TicketDetail> {
     const data = await apiFetch<{ data: TicketDetail }>(`/api/v1/tickets/${id}`);
     if (data && data.data) return data.data;
   } catch {}
-  
-  return {
-    id,
-    project: { name: "Nexus Platform", key: "NEX" },
-    ticketProjectId: "demo-proj",
-    title: "Database connection spiking to 100% CPU",
-    status: "IN_PROGRESS",
-    priority: "CRITICAL",
-    reporter: { name: "Rania Santoso", email: "rania@nexus.co" },
-    assignee: { name: "Arif Kurniawan", email: "arif@nexus.co" },
-    description: "The primary Postgres database is experiencing severe CPU spikes under peak load. Every 15-20 minutes, CPU jumps to 100% causing severe latency degradation.\n\n**Affected users:** 40,000+\n**Environment:** Production (us-east-1)\n**Started:** ~2 hours ago",
-    comments: [
-      { id: "c1", body: "I can reproduce this with pgbench at 50 concurrent connections. The issue seems to be in the query planner not using the right index.", user: { email: "arif@nexus.co" }, createdAt: new Date(Date.now() - 3600_000).toISOString() },
-      { id: "c2", body: "Cross-referencing with the deployment log — this started 15min after the v2.4.0 deploy. Rolling back to v2.3.9 as a mitigation.", user: { email: "rania@nexus.co" }, createdAt: new Date(Date.now() - 1800_000).toISOString() },
-    ],
-    createdAt: new Date(Date.now() - 7200_000).toISOString(),
-  };
+  // No fallback, let the UI handle the 'not found' state
+  return null as any;
 }
 
 async function postComment(ticketId: string, body: string) {

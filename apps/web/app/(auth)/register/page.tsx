@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff, Loader2, ShieldCheck, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, AlertCircle, CheckCircle2, Rocket, Globe, ShieldCheck, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8081";
@@ -44,7 +44,6 @@ export default function RegisterPage() {
         throw new Error(data.message || "Registration failed. Please check your details.");
       }
 
-      // Automatically log in or redirect to login
       localStorage.setItem("nexus_access_token", data.accessToken);
       localStorage.setItem("nexus_refresh_token", data.refreshToken);
       localStorage.setItem("nexus_user", JSON.stringify(data.user));
@@ -62,168 +61,221 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-bg-page flex items-center justify-center relative overflow-hidden py-10">
-      {/* Background glows */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-violet-500/8 blur-[160px] rounded-full pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-teal-500/5 blur-[120px] rounded-full pointer-events-none" />
-
-      {/* Grid pattern */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.03]"
-        style={{
-          backgroundImage: `linear-gradient(var(--border-default) 1px, transparent 1px), linear-gradient(90deg, var(--border-default) 1px, transparent 1px)`,
-          backgroundSize: "48px 48px",
-        }}
-      />
-
-      <div className="relative w-full max-w-[450px] px-4">
-        {/* Logo & Brand */}
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl mb-4 relative">
-            <div className="absolute inset-0 rounded-2xl bg-violet-500/20 border border-violet-500/40 shadow-brand" />
-            <div className="relative flex items-center justify-center">
-              <svg width="24" height="24" viewBox="0 0 28 28" fill="none">
-                <path d="M5 23V5L14 18V5L23 23" stroke="var(--violet-400)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
+    <div className="min-h-screen bg-bg-page flex flex-col relative overflow-hidden font-dmsans">
+      
+      {/* ─── TOPBAR (AWS style) ─── */}
+      <header className="h-14 flex items-center justify-between px-6 z-50">
+        <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push("/")}>
+          <div className="h-8 w-8 rounded-lg bg-brand-default flex items-center justify-center shadow-brand">
+            <span className="text-sm font-syne font-bold text-white">N</span>
           </div>
-          <h1 className="font-syne text-xl font-bold text-text-primary tracking-tight">Create your Nexus Account</h1>
-          <p className="text-text-tertiary mt-1 font-dmsans text-[13px]">Protected by NexGuard Policy 🛡️</p>
+          <span className="font-syne font-bold text-lg tracking-tight text-text-primary">Nexus EMS</span>
         </div>
+        <div className="flex items-center gap-4">
+          <Button variant="ghost" className="text-xs font-bold text-text-tertiary hover:text-text-primary gap-1.5">
+            <Globe className="h-3.5 w-3.5" />
+            English
+          </Button>
+        </div>
+      </header>
 
-        {/* Register Card */}
-        <div className="bg-bg-surface border border-border-default rounded-2xl p-7 shadow-lg">
-          <form onSubmit={handleRegister} className="space-y-4">
-            
-            <div className="grid grid-cols-2 gap-4">
-              {/* First Name */}
-              <div className="space-y-1.5">
-                <Label htmlFor="firstName" className="text-[10px] font-mono font-bold uppercase tracking-widest text-text-tertiary">First Name</Label>
-                <Input
-                  id="firstName"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="John"
-                  required
-                  className="h-9 bg-bg-sunken border-border-default text-[13px] focus:ring-brand-default"
-                />
-              </div>
-              {/* Last Name */}
-              <div className="space-y-1.5">
-                <Label htmlFor="lastName" className="text-[10px] font-mono font-bold uppercase tracking-widest text-text-tertiary">Last Name</Label>
-                <Input
-                  id="lastName"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Doe"
-                  required
-                  className="h-9 bg-bg-sunken border-border-default text-[13px] focus:ring-brand-default"
-                />
-              </div>
-            </div>
+      {/* ─── BACKGROUND DECORATION ─── */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {/* Isometric Cube Pattern */}
+        <div 
+          className="absolute bottom-0 left-0 w-full h-[60%] opacity-10"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l30 15v30L30 60 0 45V15z' fill='none' stroke='%236366f1' stroke-width='1'/%3E%3Cpath d='M30 0v30M0 15l30 15 30-15' fill='none' stroke='%236366f1' stroke-width='1'/%3E%3C/svg%3E")`,
+            backgroundSize: "120px 104px",
+            maskImage: "linear-gradient(to top, black, transparent)",
+          }}
+        />
+        <div className="absolute top-20 right-[-100px] w-[600px] h-[600px] bg-brand-default/5 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-100px] left-[-100px] w-[400px] h-[400px] bg-teal-500/5 blur-[100px] rounded-full" />
+      </div>
 
-            {/* Email */}
-            <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-[10px] font-mono font-bold uppercase tracking-widest text-text-tertiary">Work Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="john@nexus.co"
-                required
-                className="h-9 bg-bg-sunken border-border-default text-[13px] focus:ring-brand-default"
-              />
-            </div>
-
-            {/* Password */}
-            <div className="space-y-1.5">
-              <Label htmlFor="password" className="text-[10px] font-mono font-bold uppercase tracking-widest text-text-tertiary">Password</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Minimum 8 characters"
-                  required
-                  className="h-9 bg-bg-sunken border-border-default pr-10 text-[13px] focus:ring-brand-default"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-secondary"
-                >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </button>
-              </div>
-              {/* Complexity hint */}
-              {password.length > 0 && (
-                <div className="flex items-center gap-1.5 mt-1.5">
-                  <div className={cn("h-1 flex-1 rounded-full", password.length >= 8 ? "bg-emerald-500" : "bg-bg-elevated")} />
-                  <div className={cn("h-1 flex-1 rounded-full", /[a-zA-Z]/.test(password) && /[0-9]/.test(password) ? "bg-emerald-500" : "bg-bg-elevated")} />
-                  <span className="text-[10px] text-text-tertiary font-medium">Strength</span>
-                </div>
-              )}
-            </div>
-
-            {/* TOS Checkbox */}
-            <div className="flex items-start gap-2.5 pt-2">
-              <div 
-                className={cn(
-                  "w-4 h-4 rounded border flex items-center justify-center cursor-pointer transition-all",
-                  agreed ? "bg-brand-default border-brand-default" : "bg-bg-sunken border-border-default"
-                )}
-                onClick={() => setAgreed(!agreed)}
-              >
-                {agreed && <CheckCircle2 className="h-3 w-3 text-white" />}
-              </div>
-              <p className="text-[11px] text-text-tertiary leading-tight">
-                I agree to the <span className="text-brand-text font-bold cursor-pointer transition-fast hover:text-brand-hover">Terms of Service</span> and <span className="text-brand-text font-bold cursor-pointer transition-fast hover:text-brand-hover">Privacy Policy</span>. I understand this system is protected by corporate security policies.
-              </p>
-            </div>
-
-            {/* Error */}
-            {error && (
-              <div className="flex items-center gap-2 bg-crimson-500/10 border border-crimson-500/30 text-crimson-500 text-[12px] px-3 py-2 rounded-lg font-medium">
-                <AlertCircle className="h-4 w-4 shrink-0" />
-                {error}
-              </div>
-            )}
-
-            {/* Submit */}
-            <Button
-              type="submit"
-              disabled={loading}
-              className={cn(
-                "w-full h-9 font-syne font-bold text-[13px] tracking-wider text-white transition-all",
-                "bg-brand-default hover:bg-brand-hover",
-                "shadow-brand hover:shadow-lg",
-                loading && "opacity-70 cursor-not-allowed"
-              )}
-            >
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "CREATE ACCOUNT"}
-            </Button>
-          </form>
-
-          <div className="mt-5 pt-5 border-t border-border-subtle">
-            <p className="text-center text-[12px] font-medium text-text-tertiary">
-              Already have an account?{" "}
-              <button
-                type="button"
-                onClick={() => router.push("/login")}
-                className="text-brand-text hover:text-brand-hover font-bold transition-fast"
-              >
-                Sign In
-              </button>
+      {/* ─── MAIN CONTENT ─── */}
+      <main className="flex-1 flex flex-col md:flex-row items-center justify-center px-6 py-12 z-10 gap-16 md:gap-24 max-w-7xl mx-auto w-full">
+        
+        {/* LEFT PANE: Marketing/Benefits */}
+        <div className="hidden md:flex flex-col max-w-md space-y-8 animate-in fade-in slide-in-from-left-8 duration-700">
+          <div className="space-y-4">
+            <h2 className="text-4xl font-syne font-bold text-text-primary leading-[1.1] tracking-tight">
+              Scale your engineering <br /> 
+              <span className="text-brand-text">at no cost</span> for 6 months
+            </h2>
+            <p className="text-text-secondary text-[15px] leading-relaxed">
+              Start with <span className="font-bold text-text-primary">Free Tier Credits</span>, plus unlock enterprise-grade CI/CD and RBAC by completing various onboarding activities.
             </p>
           </div>
+
+          <div className="relative pt-10">
+            <div className="absolute -top-4 left-0 w-24 h-24 bg-brand-default/20 blur-[40px] rounded-full animate-pulse" />
+            <div className="relative group transition-all duration-500">
+               <div className="absolute inset-0 bg-brand-default/20 blur-2xl group-hover:blur-3xl transition-all rounded-full opacity-0 group-hover:opacity-100" />
+               <Rocket className="h-48 w-48 text-brand-text drop-shadow-[0_0_30px_rgba(99,102,241,0.3)] animate-float" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6 pt-4">
+            <div className="space-y-2">
+              <div className="h-8 w-8 rounded-lg bg-bg-sunken border border-border-subtle flex items-center justify-center">
+                <ShieldCheck className="h-4 w-4 text-emerald-500" />
+              </div>
+              <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider">NexGuard™ Security</h4>
+              <p className="text-[11px] text-text-tertiary">Zero-trust architecture for enterprise deployments.</p>
+            </div>
+            <div className="space-y-2">
+              <div className="h-8 w-8 rounded-lg bg-bg-sunken border border-border-subtle flex items-center justify-center">
+                <Zap className="h-4 w-4 text-amber-500" />
+              </div>
+              <h4 className="text-xs font-bold text-text-primary uppercase tracking-wider">HyperScale CI/CD</h4>
+              <p className="text-[11px] text-text-tertiary">The fastest build times for your monorepo.</p>
+            </div>
+          </div>
         </div>
 
-        <p className="text-center mt-6 text-[10px] font-mono text-text-tertiary opacity-40 uppercase tracking-widest">
-          Nexus Corp © 2026 · Enterprise Security First
-        </p>
-      </div>
+        {/* RIGHT PANE: The Form */}
+        <div className="w-full max-w-[440px] animate-in fade-in slide-in-from-right-8 duration-700">
+          <div className="bg-bg-surface border border-border-strong rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+            {/* Subtle card glow */}
+            <div className="absolute top-0 right-0 w-48 h-48 bg-brand-default/5 blur-3xl pointer-events-none" />
+            
+            <div className="mb-8">
+              <h3 className="text-2xl font-syne font-bold text-text-primary tracking-tight">Sign up for Nexus</h3>
+              <p className="text-text-tertiary text-xs mt-1">Join the internal engineering platform of the future.</p>
+            </div>
+
+            <form onSubmit={handleRegister} className="space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">First Name</Label>
+                  <Input 
+                    value={firstName} 
+                    onChange={(e) => setFirstName(e.target.value)} 
+                    placeholder="First name" 
+                    className="h-10 bg-bg-sunken border-border-default focus:border-brand-default transition-all"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Last Name</Label>
+                  <Input 
+                    value={lastName} 
+                    onChange={(e) => setLastName(e.target.value)} 
+                    placeholder="Last name" 
+                    className="h-10 bg-bg-sunken border-border-default focus:border-brand-default transition-all"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Root user email address</Label>
+                <div className="relative group">
+                  <Input 
+                    type="email" 
+                    value={email} 
+                    onChange={(e) => setEmail(e.target.value)} 
+                    placeholder="name@company.com" 
+                    className="h-10 bg-bg-sunken border-border-default focus:border-brand-default transition-all"
+                    required
+                  />
+                  <p className="text-[9px] text-text-tertiary mt-1.5 leading-relaxed">
+                    Used for account recovery and as described in the <span className="text-brand-text font-bold cursor-pointer hover:underline">Nexus Privacy Notice</span>.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 pb-2">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-text-tertiary">Master Password</Label>
+                <div className="relative">
+                  <Input 
+                    type={showPassword ? "text" : "password"} 
+                    value={password} 
+                    onChange={(e) => setPassword(e.target.value)} 
+                    placeholder="Enter your password" 
+                    className="h-10 bg-bg-sunken border-border-default pr-10 focus:border-brand-default transition-all"
+                    required
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary transition-fast"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* TOS Consent (AWS style check styling but premium) */}
+              <div className="flex gap-3 pt-2">
+                <div 
+                  className={cn(
+                    "h-4 w-4 rounded border mt-0.5 flex items-center justify-center cursor-pointer transition-all shrink-0",
+                    agreed ? "bg-brand-default border-brand-default" : "bg-bg-sunken border-border-default hover:border-brand-default"
+                  )}
+                  onClick={() => setAgreed(!agreed)}
+                >
+                  {agreed && <CheckCircle2 className="h-3 w-3 text-white" />}
+                </div>
+                <p className="text-[11px] text-text-tertiary leading-snug">
+                  I agree to the <span className="font-bold text-brand-text hover:underline cursor-pointer">Terms of Service</span> and acknowledge this system is protected by corporate governance policies.
+                </p>
+              </div>
+
+              {/* Error State */}
+              {error && (
+                <div className="flex items-center gap-2 bg-crimson-500/10 border border-crimson-500/30 text-crimson-500 text-[11px] p-3 rounded-xl font-medium animate-in zoom-in-95 duration-200">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                  {error}
+                </div>
+              )}
+
+              <div className="space-y-4 pt-4">
+                <Button 
+                  type="submit" 
+                  disabled={loading}
+                  className="w-full h-11 bg-brand-default hover:bg-brand-hover text-white font-syne font-bold text-[13px] tracking-wider transition-all duration-300 shadow-brand active:scale-[0.98]"
+                >
+                  {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "VERIFY EMAIL & PROCEED"}
+                </Button>
+
+                <div className="relative flex items-center justify-center py-2">
+                  <div className="absolute inset-0 flex items-center px-1">
+                    <div className="w-full border-t border-border-subtle" />
+                  </div>
+                  <span className="relative px-4 bg-bg-surface text-[10px] font-bold text-text-tertiary uppercase tracking-widest">OR</span>
+                </div>
+
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => router.push("/login")}
+                  className="w-full h-11 border-border-default hover:bg-bg-elevated text-text-primary font-bold text-[11px] tracking-wider transition-all"
+                >
+                  SIGN IN TO AN EXISTING ACCOUNT
+                </Button>
+              </div>
+            </form>
+          </div>
+
+          <p className="text-center mt-8 text-[10px] font-mono text-text-tertiary opacity-30 uppercase tracking-widest leading-loose">
+            This site uses essential cookies. See our <span className="underline cursor-pointer hover:text-text-secondary">Cookie Notice</span> for more information.
+          </p>
+        </div>
+      </main>
+
+      {/* Floating Rocket CSS Animation */}
+      <style jsx global>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(5deg); }
+        }
+        .animate-float {
+          animation: float 6s ease-in-out infinite;
+        }
+      `}</style>
     </div>
   );
 }

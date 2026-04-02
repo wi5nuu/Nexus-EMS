@@ -39,13 +39,8 @@ async function fetchTickets() {
     const data = await apiFetch<{ data: TicketData[] }>("/api/v1/tickets");
     if (data.data && data.data.length > 0) return data.data;
   } catch {}
-  // Demo fallback
-  return [
-    { id: "demo-1", title: "Database CPU spiking to 100%", status: "IN_PROGRESS", priority: "CRITICAL", reporter: { email: "Wisnu@nexus.co" }, createdAt: new Date(Date.now() - 7200_000).toISOString() },
-    { id: "demo-2", title: "API response time > 2s on /tasks endpoint", status: "OPEN", priority: "HIGH", reporter: { email: "sarah@nexus.co" }, createdAt: new Date(Date.now() - 86400_000).toISOString() },
-    { id: "demo-3", title: "Authentication token not refreshing on mobile", status: "TRIAGED", priority: "MEDIUM", reporter: { email: "emily@nexus.co" }, createdAt: new Date(Date.now() - 172800_000).toISOString() },
-    { id: "demo-4", title: "Deployment to staging failed on runner 3", status: "RESOLVED", priority: "HIGH", reporter: { email: "Wisnu@nexus.co" }, createdAt: new Date(Date.now() - 259200_000).toISOString() },
-  ];
+  // No fallback, return empty list if API fails or is empty
+  return [];
 }
 
 export default function TicketsPage() {

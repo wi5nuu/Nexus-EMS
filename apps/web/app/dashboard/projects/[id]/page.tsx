@@ -20,39 +20,8 @@ async function fetchProject(id: string): Promise<ProjectDetail> {
     if (data && data.data) return data.data;
   } catch {}
 
-  const demos: Record<string, ProjectDetail> = {
-    "proj-1": {
-      id: "proj-1", name: "Nexus Platform v3", key: "NEX", color: "violet",
-      description: "Core platform rebuild with microservices architecture and real-time event streaming via Kafka. Targets 99.99% uptime SLA.",
-      status: "ACTIVE", health: "ON_TRACK", progress: 68,
-      startDate: "2026-01-10", dueDate: "2026-06-30",
-      members: [
-        { initials: "AK", name: "Arif Kurniawan",  role: "Eng Lead",   status: "online" },
-        { initials: "RS", name: "Rania Santoso",   role: "Backend",    status: "away" },
-        { initials: "DH", name: "Damar Haryanto",  role: "DevOps",     status: "online" },
-        { initials: "PA", name: "Putri Andriani",   role: "Frontend",   status: "offline" },
-      ],
-      openTickets: 14, closedTickets: 42, totalSprints: 5, currentSprint: 4,
-      milestones: [
-        { title: "Core API GA",       date: "Mar 2026", done: true  },
-        { title: "Auth & RBAC",       date: "Apr 2026", done: true  },
-        { title: "Real-time Events",  date: "May 2026", done: false },
-        { title: "Production Launch", date: "Jun 2026", done: false },
-      ],
-    },
-  };
-
-  return (
-    demos[id] || {
-      id, name: "Project", key: "PRJ", color: "violet",
-      description: "Project details are not available offline.",
-      status: "ACTIVE", health: "ON_TRACK", progress: 50,
-      startDate: "2026-01-01", dueDate: "2026-12-31",
-      members: [{ initials: "AK", name: "Arif K.", role: "Lead", status: "online" }],
-      openTickets: 0, closedTickets: 0, totalSprints: 1, currentSprint: 1,
-      milestones: [],
-    }
-  );
+  // No fallback, let the UI handle the 'not found' state
+  return null as any;
 }
 
 const colorMap: Record<string, { border: string; bg: string; text: string; bar: string }> = {

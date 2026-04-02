@@ -67,7 +67,7 @@ export default function DashboardPage() {
 
   const { data: insights, isLoading: isInsightsLoading } = useQuery({
     queryKey: ["dashboard-insights"],
-    queryFn: () => apiFetch<{ recentTickets: any[]; averageTicketResolutionTime: string; slaCompliance: string }>("/api/v1/analytics/insights"),
+    queryFn: () => apiFetch<{ recentTickets: { id: string; title: string; status: string; priority: string }[]; averageTicketResolutionTime: string; slaCompliance: string }>("/api/v1/analytics/insights"),
   });
 
   useEffect(() => {
@@ -195,7 +195,7 @@ export default function DashboardPage() {
               {isInsightsLoading ? (
                 <p className="text-xs text-text-tertiary">Loading tasks...</p>
               ) : insights?.recentTickets?.length ? (
-                insights.recentTickets.map((ticket: any) => (
+                insights.recentTickets.map((ticket: { id: string; title: string; status: string; priority: string }) => (
                   <div key={ticket.id} className="flex items-center justify-between group cursor-pointer" onClick={() => router.push(`/dashboard/tickets/${ticket.id}`)}>
                     <div className="flex items-center gap-3">
                       <div className="h-8 w-8 rounded-lg bg-bg-sunken border border-border-subtle flex items-center justify-center shrink-0 group-hover:border-brand-default transition-fast">
