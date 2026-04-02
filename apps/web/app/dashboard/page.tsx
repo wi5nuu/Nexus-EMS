@@ -58,7 +58,9 @@ export default function DashboardPage() {
   const [mounted, setMounted] = useState(false);
 
   const user = getUser();
-  const userName = user ? `${user.firstName} ${user.lastName}` : "Wisnu";
+  const userName = user?.firstName 
+    ? `${user.firstName}${user.lastName ? " " + user.lastName : ""}` 
+    : user?.email?.split("@")[0] || "Engineer";
 
   const { data: kpis, isLoading: isKpisLoading } = useQuery({
     queryKey: ["dashboard-kpis"],

@@ -164,7 +164,9 @@ export default function DashboardLayout({
                   <Avatar className="h-5 w-5 border border-border-default">
                     <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.id}`} />
                     <AvatarFallback className="text-[9px]">
-                      {user ? `${user.firstName[0]}${user.lastName[0]}` : "JD"}
+                      {user?.firstName && user?.lastName 
+                        ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase() 
+                        : user?.email?.[0]?.toUpperCase() || "JD"}
                     </AvatarFallback>
                   </Avatar>
                   <ChevronDown className="h-2.5 w-2.5 text-text-tertiary hidden sm:block" />
