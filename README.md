@@ -1,3 +1,12 @@
+---
+title: Nexus EMS Backend
+emoji: 🛡️
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
+
 # 🛡️ Nexus EMS — Enterprise Management System
 
 [![Frontend: Next.js 14](https://img.shields.io/badge/Frontend-Next.js%2014-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
