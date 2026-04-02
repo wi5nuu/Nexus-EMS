@@ -1,5 +1,8 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM node:20-slim AS builder
+
+# Install openssl for Prisma
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
@@ -24,12 +27,15 @@ RUN npm run build -w apps/backend
 RUN mkdir -p apps/backend/dist/shared/rbac && cp apps/backend/src/shared/rbac/* apps/backend/dist/shared/rbac/
 
 # Production stage
-FROM node:20-alpine
+FROM node:20-slim
 
 WORKDIR /app
 
-# Create a non-root user for Hugging Face
-RUN addgroup -S nexus && adduser -S nexus -G nexus
+# Install openssl for Prisma runtime
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user for Hugging Face (Debian syntax)
+RUN groupadd -r nexus && useradd -r -g nexus nexus
 USER nexus
 
 # Copy built files from builder
