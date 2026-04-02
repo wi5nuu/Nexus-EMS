@@ -14,6 +14,9 @@ RUN npm install
 # Copy source code
 COPY . .
 
+# Generate Prisma Client (CRITICAL for monorepo Docker)
+RUN npx prisma generate --schema=apps/backend/prisma/schema.prisma
+
 # Build the backend
 RUN npm run build -w apps/backend
 
@@ -31,7 +34,6 @@ COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/apps/backend/package*.json ./apps/backend/
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
-COPY --from=builder /app/apps/backend/node_modules ./apps/backend/node_modules
 
 # Hugging Face Spaces default port
 ENV PORT=7860
