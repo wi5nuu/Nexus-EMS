@@ -61,7 +61,7 @@ export class AuthService {
   async updateProfile(userId: string, input: UpdateProfileInput) {
     const { firstName, lastName, ...profileData } = input;
 
-    return prisma.$transaction(async (tx) => {
+    return prisma.$transaction(async (tx: any) => {
       // Update User fields
       if (firstName !== undefined || lastName !== undefined) {
         await tx.user.update({

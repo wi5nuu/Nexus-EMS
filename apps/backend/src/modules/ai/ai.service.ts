@@ -48,7 +48,7 @@ export class AIService {
     return {
       ticketId,
       summary: `Automated Postmortem for ${ticket.title}`,
-      timeline: ticket.comments.map(c => `${c.createdAt.toISOString()}: ${c.body.substring(0, 50)}...`),
+      timeline: ticket.comments.map((c: any) => `${c.createdAt.toISOString()}: ${c.body.substring(0, 50)}...`),
       rootCause: "To be determined by engineering team.",
       actionItems: [
         "Review error logs for the period.",

@@ -42,10 +42,10 @@ export class AnalyticsService {
 
     if (!sprint) throw new Error('Sprint not found');
 
-    const totalPoints = sprint.tasks.reduce((acc, t) => acc + (t.storyPoints || 0), 0);
+    const totalPoints = sprint.tasks.reduce((acc: number, t: any) => acc + (t.storyPoints || 0), 0);
     const completedPoints = sprint.tasks
-      .filter(t => t.status === 'DONE')
-      .reduce((acc, t) => acc + (t.storyPoints || 0), 0);
+      .filter((t: any) => t.status === 'DONE')
+      .reduce((acc: number, t: any) => acc + (t.storyPoints || 0), 0);
 
     return {
       sprintName: sprint.name,
@@ -53,7 +53,7 @@ export class AnalyticsService {
       completedPoints,
       progress: totalPoints > 0 ? (completedPoints / totalPoints) * 100 : 0,
       taskCount: sprint.tasks.length,
-      completedTaskCount: sprint.tasks.filter(t => t.status === 'DONE').length
+      completedTaskCount: sprint.tasks.filter((t: any) => t.status === 'DONE').length
     };
   }
 

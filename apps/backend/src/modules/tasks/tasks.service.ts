@@ -60,7 +60,7 @@ export class TasksService {
 
     // Use transaction if we need to update assignees
     if (assigneeIds !== undefined) {
-      return prisma.$transaction(async (tx) => {
+      return prisma.$transaction(async (tx: any) => {
         // Delete old assignees
         await tx.taskAssignee.deleteMany({
           where: { taskId },
