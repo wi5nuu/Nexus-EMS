@@ -39,7 +39,7 @@ async function fetchTicket(id: string): Promise<TicketDetail> {
     if (data && data.data) return data.data;
   } catch {}
   // No fallback, let the UI handle the 'not found' state
-  return null as any;
+  return null as unknown as TicketDetail;
 }
 
 async function postComment(ticketId: string, body: string) {

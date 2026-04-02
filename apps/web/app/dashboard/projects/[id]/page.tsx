@@ -21,7 +21,7 @@ async function fetchProject(id: string): Promise<ProjectDetail> {
   } catch {}
 
   // No fallback, let the UI handle the 'not found' state
-  return null as any;
+  return null as unknown as ProjectDetail;
 }
 
 const colorMap: Record<string, { border: string; bg: string; text: string; bar: string }> = {
