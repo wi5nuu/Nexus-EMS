@@ -13,9 +13,7 @@ import {
   Edit3, UserX,
   Award, ShieldCheck,
   History as HistoryIcon,
-  Users,
-  Check,
-  AlertCircle
+  Users
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -39,7 +37,7 @@ export default function EmployeeProfilePage() {
 
   const { data: employeeData, isLoading: isEmpLoading } = useQuery({
     queryKey: ['employee', id],
-    queryFn: () => apiFetch<{data: any}>(`/api/v1/hr/employees/${id}`),
+    queryFn: () => apiFetch<{data: { id?: string, firstName?: string, lastName?: string, email?: string, phone?: string, location?: string, status?: string, createdAt?: string, employeeProfile?: { teamId?: string, jobTitle?: string, departmentId?: string, joinDate?: string, department?: { name?: string }, team?: { name?: string, leadId?: string } } }}>(`/api/v1/hr/employees/${id}`),
   });
 
   const empRaw = employeeData?.data;
@@ -47,20 +45,20 @@ export default function EmployeeProfilePage() {
   // New: Fetch Departments for selection
   const { data: deptsData } = useQuery({
     queryKey: ['departments'],
-    queryFn: () => apiFetch<{data: any[]}>('/api/v1/organization/departments'),
+    queryFn: () => apiFetch<{data: Array<{id: string, name: string}>}>('/api/v1/organization/departments'),
   });
 
   // New: Fetch Teams for selection
   const { data: teamsData } = useQuery({
     queryKey: ['teams'],
-    queryFn: () => apiFetch<{data: any[]}>('/api/v1/hr/teams'),
+    queryFn: () => apiFetch<{data: Array<{id: string, name: string, departmentId: string}>}>('/api/v1/hr/teams'),
   });
 
   // New: Fetch Team Members for the current employee's team
   const teamId = empRaw?.employeeProfile?.teamId;
   const { data: teamMembersData } = useQuery({
     queryKey: ['team-members', teamId],
-    queryFn: () => apiFetch<{data: any[]}>(`/api/v1/hr/teams/${teamId}/members`),
+    queryFn: () => apiFetch<{data: Array<{user: {id: string, firstName: string, lastName: string}}>}>(`/api/v1/hr/teams/${teamId}/members`),
     enabled: !!teamId,
   });
 
@@ -85,7 +83,7 @@ export default function EmployeeProfilePage() {
   }, [empRaw, isEditOpen]);
 
   const updateMutation = useMutation({
-    mutationFn: (data: any) => apiFetch(`/api/v1/hr/employees/${id}`, {
+    mutationFn: (data: Record<string, unknown>) => apiFetch(`/api/v1/hr/employees/${id}`, {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
@@ -94,7 +92,7 @@ export default function EmployeeProfilePage() {
       toast.success("Identity profile synchronized with central datastore.");
       setIsEditOpen(false);
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 
   const handleSaveEdit = () => {
@@ -204,7 +202,7 @@ export default function EmployeeProfilePage() {
                         <SelectValue placeholder="Select Department" />
                       </SelectTrigger>
                       <SelectContent className="bg-bg-surface border-border-default">
-                        {departments.map((d: any) => (
+                        {departments.map((d: {id: string, name: string}) => (
                            <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
                         ))}
                       </SelectContent>
@@ -218,7 +216,7 @@ export default function EmployeeProfilePage() {
                       </SelectTrigger>
                       <SelectContent className="bg-bg-surface border-border-default">
                         <SelectItem value="none">Independent Contributor</SelectItem>
-                        {filteredTeams.map((t: any) => (
+                        {filteredTeams.map((t: {id: string, name: string}) => (
                            <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                         ))}
                       </SelectContent>
@@ -404,7 +402,7 @@ export default function EmployeeProfilePage() {
                                   <div className="flex items-center justify-between">
                                      <div className="flex items-center gap-2">
                                         <div className="flex -space-x-3">
-                                           {teamMembers.slice(0, 5).map((m: any, idx: number) => (
+                                           {teamMembers.slice(0, 5).map((m: {user: {firstName: string, lastName?: string, id?: string}}, idx: number) => (
                                              <Avatar key={idx} className="h-7 w-7 rounded-none border-2 border-bg-surface bg-bg-sunken shrink-0 shadow-sm ring-1 ring-black/5">
                                                  <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${m.user.firstName}`} />
                                                  <AvatarFallback className="text-[10px] font-bold text-text-tertiary">{m.user.firstName[0]}</AvatarFallback>
@@ -429,7 +427,7 @@ export default function EmployeeProfilePage() {
                                  <p className="text-[10px] font-mono text-text-tertiary uppercase tracking-widest mt-1">Operational Unit Deployment Ledger</p>
                                </DialogHeader>
                                <div className="p-6 max-h-[400px] overflow-y-auto space-y-3">
-                                 {teamMembers.map((m: any) => (
+                                 {teamMembers.map((m: {jobTitle?: string, user: {id: string, firstName: string, lastName: string}}) => (
                                    <div key={m.user.id} className="flex items-center justify-between p-3 bg-bg-panel/50 border border-border-subtle hover:border-brand-default/30 transition-all group">
                                       <div className="flex items-center gap-3">
                                          <Avatar className="h-10 w-10 rounded-none border border-border-subtle shadow-sm group-hover:scale-105 transition-fast">

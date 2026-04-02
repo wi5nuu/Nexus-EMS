@@ -23,7 +23,7 @@ async function fetchAttendanceHistory(): Promise<AttendanceLog[]> {
   try {
     const res = await apiFetch<AttendanceLog[]>("/api/v1/hr/attendance/my-history");
     if (res && typeof res === 'object' && 'data' in res) {
-      return (res as any).data || [];
+      return (res as { data?: AttendanceLog[] }).data || [];
     }
     return Array.isArray(res) ? res : [];
   } catch {

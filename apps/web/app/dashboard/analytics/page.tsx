@@ -11,12 +11,12 @@ import {
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { apiFetch } from "@/lib/auth";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Download, FileText, Activity, Shield, Terminal, Globe, Filter } from "lucide-react";
+import { Download, FileText, Activity, Shield, Terminal, Filter } from "lucide-react";
 import { toast } from "sonner";
 
 const velocityData = [

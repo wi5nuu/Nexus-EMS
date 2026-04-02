@@ -3,7 +3,7 @@
 import { 
   Mail, 
   Shield, Key, Save,
-  Github, Slack, Cloud, Camera,
+  Github, Slack, Camera,
   Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -75,8 +75,8 @@ export default function ProfileSettingsPage() {
       }
       toast.success("Profile security baseline updated.");
     },
-    onError: (err: any) => {
-      toast.error(`Sync failed: ${err.message}`);
+    onError: (err: unknown) => {
+      toast.error(`Sync failed: ${err instanceof Error ? err.message : String(err)}`);
     }
   });
 

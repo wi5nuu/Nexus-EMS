@@ -3,7 +3,7 @@
 import {
   Layers, Clock,
   Download, Filter, MoreHorizontal,
-  Circle, ArrowDownRight, FileText
+  Circle, ArrowDownRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";

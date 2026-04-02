@@ -1,7 +1,6 @@
 "use client";
 
 import { CheckCircle2, AlertTriangle, ShieldAlert } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export default function TermsOfService() {
   const sections = [

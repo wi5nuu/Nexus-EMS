@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { Map, Briefcase, GraduationCap, Zap, TrendingUp } from "lucide-react";
+import { Map, Zap, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 

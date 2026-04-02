@@ -36,8 +36,8 @@ export default function NewTicketPage() {
       });
       toast.success("Ticket created successfully. Our engineers have been notified.");
       router.push("/dashboard/tickets");
-    } catch (err: any) {
-      toast.error(`Failed to create ticket: ${err.message}`);
+    } catch (err: unknown) {
+      toast.error(`Failed to create ticket: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLoading(false);
     }

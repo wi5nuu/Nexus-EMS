@@ -4,13 +4,12 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/auth";
 import { useSession } from "next-auth/react";
-import { redirect } from "next/navigation";
+
 import { 
   ShieldCheck, 
   Search, 
   Download, 
   Filter, 
-  Eye, 
   User as UserIcon, 
   Globe, 
   Clock,
@@ -22,7 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { 
   Dialog, 
   DialogContent, 
@@ -32,7 +31,7 @@ import {
 } from "@/components/ui/dialog";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+
 
 interface AuditLog {
   id: string;
@@ -42,8 +41,8 @@ interface AuditLog {
   resource: string;
   resourceId?: string;
   ipAddress?: string;
-  newValues?: any;
-  oldValues?: any;
+  newValues?: Record<string, unknown>;
+  oldValues?: Record<string, unknown>;
   createdAt: string;
 }
 
@@ -53,7 +52,7 @@ export default function AuditLogsPage() {
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
 
   // Security: Ensure only admins can access
-  if (session && (session.user as any).role !== 'ADMIN' && (session.user as any).role !== 'SUPERADMIN') {
+  if (session && (session.user as { role?: string }).role !== 'ADMIN' && (session.user as { role?: string }).role !== 'SUPERADMIN') {
      // Optional: redirect('/dashboard');
   }
 

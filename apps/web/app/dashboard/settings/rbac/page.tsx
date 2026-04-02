@@ -4,25 +4,13 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/auth";
 import { useSession } from "next-auth/react";
-import { redirect } from "next/navigation";
 import { 
   ShieldCheck, 
-  Users, 
   Shield, 
-  Clock, 
   Activity, 
-  MapPin, 
-  Globe, 
-  Search, 
-  Filter, 
-  ChevronRight, 
-  MoreVertical, 
   Check, 
   X, 
   Plus, 
-  Edit2, 
-  Eye, 
-  Settings2, 
   Trash2, 
   AlertTriangle, 
   Loader2,
@@ -30,12 +18,10 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Separator } from "@/components/ui/separator";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -64,7 +50,7 @@ export default function RBACPage() {
   const [activeTab, setActiveTab] = useState("matrix");
 
   // Security: Ensure only admins can access
-  if (session && (session.user as any).role !== 'ADMIN' && (session.user as any).role !== 'SUPERADMIN') {
+  if (session && (session.user as { role?: string }).role !== 'ADMIN' && (session.user as { role?: string }).role !== 'SUPERADMIN') {
      // Optional: redirect('/dashboard');
   }
 
@@ -96,7 +82,7 @@ export default function RBACPage() {
       queryClient.invalidateQueries({ queryKey: ["rbac-roles"] });
       toast.success("Permissions synchronized across global clusters.");
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 
   const handleTogglePermission = (resource: string, action: string) => {
@@ -247,7 +233,7 @@ export default function RBACPage() {
                                         <div className="h-1.5 w-1.5 rounded-full bg-brand-default" /> {resource}
                                      </td>
                                      {ACTIONS.map(action => {
-                                       const isActive = selectedRole?.permissions?.some((p: any) => 
+                                       const isActive = selectedRole?.permissions?.some((p: Permission) => 
                                          p.resource.toLowerCase() === resource.toLowerCase() && p.action.toLowerCase() === action.toLowerCase()
                                        );
                                        return (

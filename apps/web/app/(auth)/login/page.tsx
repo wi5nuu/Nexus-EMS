@@ -13,6 +13,7 @@ const GOOGLE_CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "YOUR_GOOGL
 
 declare global {
   interface Window {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     google: any;
   }
 }
@@ -36,8 +37,9 @@ export default function LoginPage() {
       // Also show One Tap prompt automatically for seamless experience
       window.google.accounts.id.prompt();
     }
-  }, []);
+  }, [router]);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   async function handleGoogleResponse(response: any) {
     setLoading(true);
     setError(null);
@@ -56,8 +58,8 @@ export default function LoginPage() {
       localStorage.setItem("vanguard_user", JSON.stringify(data.user));
 
       router.push("/dashboard");
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -65,6 +67,7 @@ export default function LoginPage() {
 
   function triggerGoogleLogin() {
     if (window.google) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       window.google.accounts.id.prompt((notification: any) => {
         if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
           // Fallback if prompt doesn't show

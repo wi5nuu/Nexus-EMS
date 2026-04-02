@@ -4,15 +4,12 @@ import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiFetch } from "@/lib/auth";
 import { useSession } from "next-auth/react";
-import { redirect } from "next/navigation";
+
 import { 
-  Building2, 
   MapPin, 
   Globe, 
-  Calendar, 
   Users, 
   Plus, 
-  ChevronRight, 
   MoreVertical,
   DollarSign,
   TrendingUp,
@@ -20,8 +17,7 @@ import {
   Layers,
   Settings2,
   Save,
-  Loader2,
-  Trash2
+  Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -32,31 +28,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { motion } from "framer-motion";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+
 
 export default function OrganizationPage() {
   const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState("overview");
-  const [saving, setSaving] = useState(false);
-
   // Security: Ensure only admins can access
-  if (session && (session.user as any).role !== 'ADMIN' && (session.user as any).role !== 'SUPERADMIN') {
+  if (session && (session.user as { role?: string }).role !== 'ADMIN' && (session.user as { role?: string }).role !== 'SUPERADMIN') {
      // Optional: redirect('/dashboard');
   }
 
   const { data: orgData, isLoading: isLoadingOrg } = useQuery({
     queryKey: ["org-details"],
-    queryFn: () => apiFetch<{ data: any }>("/api/v1/organization/details"),
+    queryFn: () => apiFetch<{ data: { name?: string, slug?: string } }>("/api/v1/organization/details"),
   });
 
   const { data: deptsData, isLoading: isLoadingDepts } = useQuery({
     queryKey: ["org-departments"],
-    queryFn: () => apiFetch<{ data: any[] }>("/api/v1/organization/departments"),
+    queryFn: () => apiFetch<{ data: Array<{ id: string, name: string, _count?: { employees: number, teams: number }, manager?: { firstName: string, lastName: string } }> }>("/api/v1/organization/departments"),
   });
 
   const { data: bandsData, isLoading: isLoadingBands } = useQuery({
     queryKey: ["org-salary-bands"],
-    queryFn: () => apiFetch<{ data: any[] }>("/api/v1/organization/salary-bands"),
+    queryFn: () => apiFetch<{ data: Array<{ id: string, level: string, minSalary: number, maxSalary: number }> }>("/api/v1/organization/salary-bands"),
   });
 
   const org = orgData?.data;
@@ -64,14 +58,14 @@ export default function OrganizationPage() {
   const salaryBands = bandsData?.data || [];
 
   const updateMutation = useMutation({
-    mutationFn: (data: any) => apiFetch("/api/v1/organization/details", {
+    mutationFn: (data: Record<string, unknown>) => apiFetch("/api/v1/organization/details", {
       method: "PATCH",
       body: JSON.stringify(data),
     }),
     onSuccess: () => {
       toast.success("Organization global settings synchronized successfully.");
     },
-    onError: (err: any) => toast.error(err.message),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : String(err)),
   });
 
   const handleSave = () => {
@@ -137,7 +131,7 @@ export default function OrganizationPage() {
         <TabsContent value="overview" className="p-6 space-y-6">
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
-                { label: "Total Talent", value: departments.reduce((acc: number, d: any) => acc + (d._count?.employees || 0), 0).toString(), icon: Users, trend: "Live" },
+                { label: "Total Talent", value: departments.reduce((acc: number, d: { _count?: { employees?: number } }) => acc + (d._count?.employees || 0), 0).toString(), icon: Users, trend: "Live" },
                 { label: "Op-Ex Monthly", value: "$2.4M", icon: DollarSign, trend: "-2.1%" },
                 { label: "Active Projs", value: "32", icon: Briefcase, trend: "+4" },
                 { label: "Org Health", value: "97.2%", icon: TrendingUp, trend: "Stable" },
@@ -218,7 +212,7 @@ export default function OrganizationPage() {
                 <div className="col-span-2 py-12 text-center border-2 border-dashed border-border-subtle">
                    <p className="text-xs font-bold text-text-tertiary uppercase tracking-widest">No departments configured for this entity.</p>
                 </div>
-              ) : departments.map((dept: any) => (
+              ) : departments.map((dept: { id: string, name: string, _count?: { employees?: number, teams?: number }, manager?: { firstName: string, lastName: string } }) => (
                 <div key={dept.id} className="bg-bg-panel border border-border-subtle hover:border-brand-default/50 transition-all p-5 group relative overflow-hidden">
                    <div className="flex justify-between items-baseline mb-4">
                       <h4 className="font-syne font-bold text-lg">{dept.name}</h4>
@@ -286,7 +280,7 @@ export default function OrganizationPage() {
                                <tr>
                                  <td colSpan={4} className="p-8 text-center text-xs font-bold text-text-tertiary uppercase">No salary bands defined.</td>
                                </tr>
-                             ) : salaryBands.map((band: any) => (
+                             ) : salaryBands.map((band: { id: string, level: string, minSalary?: number, maxSalary?: number }) => (
                                <tr key={band.id} className="hover:bg-bg-panel/30 transition-colors">
                                   <td className="p-4">
                                      <span className="text-xs font-bold text-text-primary px-2 py-1 bg-bg-elevated border border-border-strong">{band.level}</span>

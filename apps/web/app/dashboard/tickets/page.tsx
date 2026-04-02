@@ -75,12 +75,7 @@ export default function TicketsPage() {
     }, 1500);
   };
 
-  const handleFilterChange = (p: string) => {
-    setPriorityFilter(p);
-    if (p !== "ALL") {
-      toast.info(`Filtering by ${p} priority`);
-    }
-  };
+
 
   const filtered = tickets.filter((t: TicketData) => {
     const matchSearch = t.title?.toLowerCase().includes(search.toLowerCase());

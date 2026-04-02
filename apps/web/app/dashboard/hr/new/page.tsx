@@ -40,8 +40,8 @@ export default function NewEmployeePage() {
       });
       toast.success(`${formData.firstName} has been onboarded successfully.`);
       router.push("/dashboard/hr");
-    } catch (err: any) {
-      toast.error(`Onboarding failed: ${err.message}`);
+    } catch (err: unknown) {
+      toast.error(`Onboarding failed: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setLoading(false);
     }

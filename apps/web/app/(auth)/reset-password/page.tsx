@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ArrowLeft, Mail, Loader2, CheckCircle2 } from "lucide-react";
-import { cn } from "@/lib/utils";
+
 import { toast } from "sonner";
 
 export default function ResetPasswordPage() {
@@ -49,7 +49,7 @@ export default function ResetPasswordPage() {
               <div className="space-y-2">
                 <h1 className="font-syne text-2xl font-bold text-text-primary tracking-tight">RESET ACCESS</h1>
                 <p className="text-text-secondary font-dmsans text-sm leading-relaxed">
-                  Enter your work email address and we'll send you instructions to reset your password.
+                  Enter your work email address and we&apos;ll send you instructions to reset your password.
                 </p>
               </div>
 
@@ -96,7 +96,7 @@ export default function ResetPasswordPage() {
               <div className="space-y-2">
                 <h2 className="font-syne text-xl font-bold text-text-primary">CHECK YOUR EMAIL</h2>
                 <p className="text-text-secondary font-dmsans text-sm">
-                  We've sent a recovery link to <span className="text-text-primary font-bold">{email}</span>. 
+                  We&apos;ve sent a recovery link to <span className="text-text-primary font-bold">{email}</span>. 
                   Please check your inbox and spam folder.
                 </p>
               </div>

@@ -26,7 +26,7 @@ interface Employee {
 
 async function fetchEmployees(): Promise<Employee[]> {
   try {
-    const data = await apiFetch<{ data: any[] }>("/api/v1/hr/employees");
+    const data = await apiFetch<{ data: Array<{ id: string, email: string, firstName?: string, lastName?: string, status?: string, createdAt?: string, employeeProfile?: { department?: { name?: string }, jobTitle?: string, level?: string, joinDate?: string } }> }>("/api/v1/hr/employees");
     return (data?.data ?? []).map(user => ({
       id: user.id,
       name: user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : (user.email.split('@')[0]),
@@ -35,7 +35,7 @@ async function fetchEmployees(): Promise<Employee[]> {
       department: user.employeeProfile?.department?.name || "Unassigned",
       jobTitle: user.employeeProfile?.jobTitle || "Vanguard Member",
       level: user.employeeProfile?.level || "Engineer",
-      joined: user.employeeProfile?.joinDate || user.createdAt,
+      joined: user.employeeProfile?.joinDate || user.createdAt || new Date().toISOString(),
     }));
   } catch {
     return [

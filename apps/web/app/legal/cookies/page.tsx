@@ -36,7 +36,7 @@ export default function CookieNotice() {
 
       <div className="p-8 border border-border-default bg-bg-sunken/50 space-y-6">
          <h2 className="text-xl font-syne font-bold text-text-primary">Cookie Settings</h2>
-         <p className="text-sm text-text-tertiary">Since Vanguard Hub is an internal corporate tool, all technical cookies are mandatory to comply with Vanguard Corp security policies (N-SEC-P104). To clear your preferences, please reset your browser's local storage for this domain.</p>
+         <p className="text-sm text-text-tertiary">Since Vanguard Hub is an internal corporate tool, all technical cookies are mandatory to comply with Vanguard Corp security policies (N-SEC-P104). To clear your preferences, please reset your browser&apos;s local storage for this domain.</p>
          <div className="flex items-center gap-4">
            <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
              <CheckCircle2 className="h-3 w-3" /> Technical Cookies Active

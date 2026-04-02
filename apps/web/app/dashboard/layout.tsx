@@ -374,7 +374,7 @@ export default function DashboardLayout({
               <nav className="flex items-center gap-1.5 text-[10px] font-medium text-text-tertiary">
                 <Link href="/dashboard" className="hover:text-text-secondary transition-fast">Vanguard</Link>
                 {breadcrumbs.length > 0 && <span>/</span>}
-                {breadcrumbs.map((bc, i) => (
+                {breadcrumbs.map((bc) => (
                   <div key={bc.href} className="flex items-center gap-1.5">
                     {bc.isLast ? (
                       <span className="text-text-secondary capitalize">{bc.label}</span>

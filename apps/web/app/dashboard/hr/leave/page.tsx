@@ -57,7 +57,7 @@ async function fetchLeaveRequests(): Promise<LeaveRequest[]> {
     const res = await apiFetch<LeaveRequest[]>("/api/v1/hr/leave/requests");
     // Ensure we handle { data: [] } generically if standard API wraps it
     if (res && typeof res === 'object' && 'data' in res) {
-      return (res as any).data || [];
+      return (res as { data?: LeaveRequest[] }).data || [];
     }
     return Array.isArray(res) ? res : [];
   } catch {
